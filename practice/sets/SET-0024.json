@@ -78,12 +78,61 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "What kinds of campus activities do students around you usually like, such as sports, student clubs, public talks, volunteer events, or social gatherings?",
+      "audio": "practice/audio/SET-0024/SET-0024_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see. And when you have free time on campus, what do you usually do: attend a club activity, exercise, study in a common area, meet friends, or something else?",
+      "audio": "practice/audio/SET-0024/SET-0024_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "spend more time participating in activities outside the classroom",
+        "focus mainly on academic work"
       ],
-      "q": "spend more time participating in activities outside the classroom, focus mainly on academic work",
+      "q": "Interesting. Should university students spend more time participating in activities outside the classroom, or should they focus mainly on academic work? Why?",
       "audio": "practice/audio/SET-0024/SET-0024_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +154,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "joining campus clubs an important way to maintain a sense of community at a university"
       ],
-      "q": "joining campus clubs an important way to maintain a sense of community at a university",
+      "q": "Good points. I just have one more question. Is joining campus clubs an important way to maintain a sense of community at a university, or can that sense of community be maintained in other ways? Why?",
       "audio": "practice/audio/SET-0024/SET-0024_q004.mp3",
       "blocks": {
         "r1": {

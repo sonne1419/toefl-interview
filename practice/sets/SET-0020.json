@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "What do people in your community typically do to help others? Give some examples.",
+      "audio": "practice/audio/SET-0020/SET-0020_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see. If you participated in a volunteer project, would you prefer helping people directly or completing behind-the-scenes tasks, such as organizing materials or sharing information? Why?",
+      "audio": "practice/audio/SET-0020/SET-0020_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "donating time is more beneficial than donating money"
       ],
-      "q": "donating time is more beneficial than donating money",
+      "q": "Interesting. Next, I'd like to get your opinion. Some believe donating time is more beneficial than donating money. Do you agree or disagree? Why?",
       "audio": "practice/audio/SET-0020/SET-0020_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "using social media a good way to organize a community service project"
       ],
-      "q": "using social media a good way to organize a community service project",
+      "q": "Good points. Lastly, I'd like to ask about organizing community service projects. Is using social media a good way to organize a community service project? Why or why not?",
       "audio": "practice/audio/SET-0020/SET-0020_q004.mp3",
       "blocks": {
         "r1": {

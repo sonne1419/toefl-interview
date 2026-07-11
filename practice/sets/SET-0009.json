@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "What kinds of music-related activities do your family or friends generally like? For example, do they prefer singing, playing instruments, going to performances, sharing playlists, or other activities?",
+      "audio": "practice/audio/SET-0009/SET-0009_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see.\nWhen you listen to music to relax, do you prefer listening alone with headphones or listening together with other people? Why?",
+      "audio": "practice/audio/SET-0009/SET-0009_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "popularity increase in the future"
       ],
-      "q": "popularity increase in the future",
+      "q": "Interesting. Next, I'd like to get your opinion.\nSmall outdoor music performances in public places are becoming popular. Will their popularity increase in the future? Why or why not?",
       "audio": "practice/audio/SET-0009/SET-0009_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "develop creativity"
       ],
-      "q": "develop creativity",
+      "q": "Good points. I just have one more question.\nWhat other activities or ways can help people develop creativity? Explain your answer.",
       "audio": "practice/audio/SET-0009/SET-0009_q004.mp3",
       "blocks": {
         "r1": {

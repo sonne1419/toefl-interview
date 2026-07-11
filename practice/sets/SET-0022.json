@@ -1,8 +1,8 @@
 {
   "set_id": "SET-0022",
   "order": 25,
-  "interviewer_gender": "bm",
-  "interviewer_image": "assets/bm.webp",
+  "interviewer_gender": "am",
+  "interviewer_image": "assets/am.webp",
   "show_question_prompt": true,
   "show_sample_support": true,
   "intro_text": "You have volunteered for a research study about reading and study resources. You will have a short online interview with a researcher. The researcher will ask you some questions.",
@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "When you need information for school or personal interest, do you prefer using printed materials or online resources? Why?",
+      "audio": "practice/audio/SET-0022/SET-0022_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "Interesting. When you need a place to read or study, do you prefer staying at home or going to a shared place, such as a library, café, or study center? Why?",
+      "audio": "practice/audio/SET-0022/SET-0022_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "most useful to young adults"
       ],
-      "q": "most useful to young adults",
+      "q": "All right. Some libraries provide computers, quiet study areas, group rooms, and free activities. Which of these services would be most useful to young adults? Why?",
       "audio": "practice/audio/SET-0022/SET-0022_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,12 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "physical libraries",
+        "in the future"
       ],
-      "q": "physical libraries, in the future",
+      "q": "Good points. Finally, as digital books and online information become more common, what role should physical libraries have in the future? Explain your opinion.",
       "audio": "practice/audio/SET-0022/SET-0022_q004.mp3",
       "blocks": {
         "r1": {

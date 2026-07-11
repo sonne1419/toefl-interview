@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "When you buy something you use regularly, do you prefer to shop online or visit a store? Why?",
+      "audio": "practice/audio/SET-0012/SET-0012_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see.\nIs it better to choose a lower-priced product or pay more for one that may last longer? Why?",
+      "audio": "practice/audio/SET-0012/SET-0012_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "necessary to read customer reviews before buying an unfamiliar product"
       ],
-      "q": "necessary to read customer reviews before buying an unfamiliar product",
+      "q": "Interesting. Next, I'd like to get your opinion.\nIs it necessary to read customer reviews before buying an unfamiliar product? Why or why not?",
       "audio": "practice/audio/SET-0012/SET-0012_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "sales and discounts essential for saving money while shopping"
       ],
-      "q": "sales and discounts essential for saving money while shopping",
+      "q": "Good points. I just have one more question.\nAre sales and discounts essential for saving money while shopping, or can planning and comparing options help people save just as effectively? Explain.",
       "audio": "practice/audio/SET-0012/SET-0012_q004.mp3",
       "blocks": {
         "r1": {

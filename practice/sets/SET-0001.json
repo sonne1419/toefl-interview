@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "What kinds of study tools or resources do students at your school typically use? For example, do they use textbooks, flash cards, practice websites, or educational videos?",
+      "audio": "practice/audio/SET-0001/SET-0001_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see.\nWhen you are learning a difficult subject, do you prefer to ask for help as soon as you feel confused or try to figure it out by yourself first? Why?",
+      "audio": "practice/audio/SET-0001/SET-0001_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "more popular in the future"
       ],
-      "q": "more popular in the future",
+      "q": "Interesting. Next, I'd like to get your opinion.\nShared study spaces are becoming popular among students. For example, some students use study cafés or collaborative areas in libraries. Will these spaces become more popular in the future? Why or why not?",
       "audio": "practice/audio/SET-0001/SET-0001_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "become successful learners"
       ],
-      "q": "become successful learners",
+      "q": "Good points. I just have one more question.\nIs having a supportive teacher essential for students to become successful learners, or can other factors achieve the same goal? For example, can personal motivation and peer support also help students become successful learners? Explain.",
       "audio": "practice/audio/SET-0001/SET-0001_q004.mp3",
       "blocks": {
         "r1": {

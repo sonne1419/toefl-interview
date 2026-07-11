@@ -1,8 +1,8 @@
 {
   "set_id": "SET-0002",
   "order": 5,
-  "interviewer_gender": "bm",
-  "interviewer_image": "assets/bm.webp",
+  "interviewer_gender": "am",
+  "interviewer_image": "assets/am.webp",
   "show_question_prompt": true,
   "show_sample_support": true,
   "intro_text": "You have volunteered for a research study about childhood learning and activities. You will have a short online interview with a researcher. The researcher will ask you some questions.",
@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "What kinds of after-school activities do children in your community generally like? For example, do they prefer sports, music, art, computer games, or other activities?",
+      "audio": "practice/audio/SET-0002/SET-0002_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see.\nIf you were spending time with a younger child, would you prefer to teach the child something useful or just play and relax together? Why?",
+      "audio": "practice/audio/SET-0002/SET-0002_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "popularity increase in the future"
       ],
-      "q": "popularity increase in the future",
+      "q": "Interesting. Next, I'd like to get your opinion.\nCoding classes for children are becoming popular. Will their popularity increase in the future? Why or why not?",
       "audio": "practice/audio/SET-0002/SET-0002_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "develop confidence"
       ],
-      "q": "develop confidence",
+      "q": "Good points. I just have one more question.\nIs participating in organized after-school activities essential for children to develop confidence, or can free time, family support, and friendships help them develop it? Explain.",
       "audio": "practice/audio/SET-0002/SET-0002_q004.mp3",
       "blocks": {
         "r1": {

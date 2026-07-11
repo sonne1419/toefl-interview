@@ -1827,14 +1827,9 @@ function renderStage0Question() {
   const en = el.dataset.en || "";
   let phrases = [];
   try { phrases = JSON.parse(el.dataset.phrases || "[]"); } catch(e) {}
-  if (stage0IsEnglish()) {
-    // English: original text with highlight phrases
-    el.innerHTML = highlightPhrases(en, phrases);
-  } else {
-    // Native: translate for comprehension (highlights skipped — English phrases
-    // won't match the translation)
-    translateUI(en, el, true);
-  }
+  // Question text always stays in English (with highlight phrases), even when
+  // the rest of Stage 0 is toggled to the native language.
+  el.innerHTML = highlightPhrases(en, phrases);
 }
 
 function updateStage0LangToggle() {

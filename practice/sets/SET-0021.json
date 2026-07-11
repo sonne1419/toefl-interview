@@ -78,12 +78,61 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "For a school or workplace group project, would you prefer communicating through email, group messaging, or face-to-face meetings? Why?",
+      "audio": "practice/audio/SET-0021/SET-0021_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "Interesting. Do new employees need regular feedback from a manager, or should they be given more time to solve problems independently? Why?",
+      "audio": "practice/audio/SET-0021/SET-0021_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "open-plan offices improve communication",
+        "make it harder for employees to concentrate"
       ],
-      "q": "open-plan offices improve communication, make it harder for employees to concentrate",
+      "q": "All right. Some say open-plan offices improve communication; others say they make it harder for employees to concentrate. What is your view? Why?",
       "audio": "practice/audio/SET-0021/SET-0021_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +154,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "shorter workweeks become more common"
       ],
-      "q": "shorter workweeks become more common",
+      "q": "Good points. Finally, will shorter workweeks become more common or remain limited in the future? What factors will most affect the direction?",
       "audio": "practice/audio/SET-0021/SET-0021_q004.mp3",
       "blocks": {
         "r1": {

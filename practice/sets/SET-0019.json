@@ -1,8 +1,8 @@
 {
   "set_id": "SET-0019",
   "order": 22,
-  "interviewer_gender": "bf",
-  "interviewer_image": "assets/bf.webp",
+  "interviewer_gender": "am",
+  "interviewer_image": "assets/am.webp",
   "show_question_prompt": true,
   "show_sample_support": true,
   "intro_text": "You have volunteered for a research study about learning. You will have a short online interview with a researcher. The researcher will ask you some questions.",
@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "What do students at your school typically do when they have several assignments due in the same week? Give some examples.",
+      "audio": "practice/audio/SET-0019/SET-0019_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see. When you prepare for an important assignment, do you prefer to make a detailed plan at the beginning or work more flexibly as you go? Why?",
+      "audio": "practice/audio/SET-0019/SET-0019_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "starting with the most difficult assignment is more beneficial"
       ],
-      "q": "starting with the most difficult assignment is more beneficial",
+      "q": "Interesting. Next, I'd like to get your opinion. Some believe starting with the most difficult assignment is more beneficial than completing easier assignments first. Do you agree or disagree? Why?",
       "audio": "practice/audio/SET-0019/SET-0019_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "using a calendar app a good way to keep track of school deadlines"
       ],
-      "q": "using a calendar app a good way to keep track of school deadlines",
+      "q": "Good points. Lastly, I'd like to ask about keeping track of school deadlines. Is using a calendar app a good way to keep track of school deadlines? Why or why not?",
       "audio": "practice/audio/SET-0019/SET-0019_q004.mp3",
       "blocks": {
         "r1": {

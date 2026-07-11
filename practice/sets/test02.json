@@ -1,8 +1,8 @@
 {
   "set_id": "test02",
   "order": 2,
-  "interviewer_gender": "bf",
-  "interviewer_image": "assets/bf.webp",
+  "interviewer_gender": "am",
+  "interviewer_image": "assets/am.webp",
   "show_question_prompt": true,
   "show_sample_support": true,
   "intro_text": "You have volunteered for a research study. You will have a short online interview with a researcher. The researcher will ask you some questions.",
@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "Thank you for joining the study. Today, I'd like to ask you some questions about your commuting habits. First, is it important to live close to your school or work? Why?",
+      "audio": "practice/audio/test02/test02_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "Imagine that you could choose to commute by car, which is faster but more expensive, or by public transportation, which is slower but less expensive. Which would you choose, and why?",
+      "audio": "practice/audio/test02/test02_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "more enjoyable"
       ],
-      "q": "more enjoyable",
+      "q": "Some people believe that commuting can be stressful and tiring. What do you think are one or two different ways to make commuting more enjoyable? Give reasons for your answer.",
       "audio": "practice/audio/test02/test02_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "affect businesses in positive ways and negative ways"
       ],
-      "q": "affect businesses in positive ways and negative ways",
+      "q": "Lastly, considering advances in technology, some people believe that commuting might disappear entirely. How do you think a severe decline in commuting might affect businesses in positive ways and negative ways?",
       "audio": "practice/audio/test02/test02_q004.mp3",
       "blocks": {
         "r1": {

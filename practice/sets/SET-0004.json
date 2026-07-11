@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "What kinds of news stories are most likely to influence people's decisions? For example, consider stories about health, weather, education, or local events. Why do these stories have an influence?",
+      "audio": "practice/audio/SET-0004/SET-0004_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see.\nWhen you want to learn about current events, do you prefer brief news summaries or in-depth reports? Why?",
+      "audio": "practice/audio/SET-0004/SET-0004_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "more schools encourage students to discuss current events in class in the future"
       ],
-      "q": "more schools encourage students to discuss current events in class in the future",
+      "q": "Interesting. Next, I'd like to get your opinion.\nWill more schools encourage students to discuss current events in class in the future? Why or why not?",
       "audio": "practice/audio/SET-0004/SET-0004_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "being an informed citizen"
       ],
-      "q": "being an informed citizen",
+      "q": "Good points. I just have one more question.\nIs following the news regularly essential for being an informed citizen, or can other things also help people become informed? For example, can community involvement or conversations with others serve the same purpose? Explain.",
       "audio": "practice/audio/SET-0004/SET-0004_q004.mp3",
       "blocks": {
         "r1": {

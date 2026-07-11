@@ -1,8 +1,8 @@
 {
   "set_id": "SET-0014",
   "order": 17,
-  "interviewer_gender": "bm",
-  "interviewer_image": "assets/bm.webp",
+  "interviewer_gender": "af",
+  "interviewer_image": "assets/af.webp",
   "show_question_prompt": true,
   "show_sample_support": true,
   "intro_text": "You have volunteered for a research study about personal finance. You will have a short online interview with a researcher. The researcher will ask you some questions.",
@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "Do you prefer saving money for one specific goal or keeping it available for unexpected needs? Why?",
+      "audio": "practice/audio/SET-0014/SET-0014_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see.\nIf you were helping a friend avoid overspending, what methods would you recommend? Please include examples.",
+      "audio": "practice/audio/SET-0014/SET-0014_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "basic money-management lessons be taught in schools"
       ],
-      "q": "basic money-management lessons be taught in schools",
+      "q": "Interesting. Next, I'd like to get your opinion.\nShould basic money-management lessons be taught in schools, or should people learn these skills only through family and personal experience? Explain your opinion.",
       "audio": "practice/audio/SET-0014/SET-0014_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "high income essential for financial security"
       ],
-      "q": "high income essential for financial security",
+      "q": "Good points. I just have one more question.\nIs having a high income essential for financial security, or can good habits and other factors achieve the same goal? Explain your answer.",
       "audio": "practice/audio/SET-0014/SET-0014_q004.mp3",
       "blocks": {
         "r1": {

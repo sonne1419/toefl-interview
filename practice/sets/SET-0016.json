@@ -1,8 +1,8 @@
 {
   "set_id": "SET-0016",
   "order": 19,
-  "interviewer_gender": "am",
-  "interviewer_image": "assets/am.webp",
+  "interviewer_gender": "af",
+  "interviewer_image": "assets/af.webp",
   "show_question_prompt": true,
   "show_sample_support": true,
   "intro_text": "You have volunteered for a research study about social media. You will have a short online interview with a researcher. The researcher will ask you some questions.",
@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "What kinds of social-media content are popular among people your age? For example, consider personal photos, short videos, news updates, or other content. Why is this content popular?",
+      "audio": "practice/audio/SET-0016/SET-0016_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I see.\nWhen you want to keep in touch with friends, do you prefer sending messages online or talking with them face to face? Why?",
+      "audio": "practice/audio/SET-0016/SET-0016_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "more people use stricter privacy rules before posting photos or personal updates in the future"
       ],
-      "q": "more people use stricter privacy rules before posting photos or personal updates in the future",
+      "q": "Interesting. Next, I'd like to get your opinion.\nWill more people use stricter privacy rules before posting photos or personal updates in the future? Why or why not?",
       "audio": "practice/audio/SET-0016/SET-0016_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,11 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "good online etiquette essential for maintaining friendships"
       ],
-      "q": "good online etiquette essential for maintaining friendships",
+      "q": "Good points. I just have one more question.\nIs good online etiquette essential for maintaining friendships, or can other factors be enough? For example, can honesty or shared interests help maintain friendships just as effectively? Explain.",
       "audio": "practice/audio/SET-0016/SET-0016_q004.mp3",
       "blocks": {
         "r1": {

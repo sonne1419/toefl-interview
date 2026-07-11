@@ -78,12 +78,60 @@
   },
   "questions": [
     {
-      "question_id": "q003",
+      "question_id": "q001",
       "question_type": "free",
+      "highlight_phrases": [],
+      "q": "I’d like to ask you some questions about environmental protection. First, what do people in your country usually do to protect the environment in their daily lives? For example, do they recycle, reduce plastic use, save electricity, or use public transportation? Why do you think they choose those actions?",
+      "audio": "practice/audio/test03/test03_q001.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q002",
+      "question_type": "free",
+      "highlight_phrases": [],
+      "q": "Thank you. In your daily life, do you prefer to reduce waste by reusing items or by recycling them? Why?",
+      "audio": "practice/audio/test03/test03_q002.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q003",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "more important in the future"
       ],
-      "q": "more important in the future",
+      "q": "That makes sense. Now I have another question. In recent years, environmental awareness has increased. Do you think environmental protection will become even more important in the future? Why or why not?",
       "audio": "practice/audio/test03/test03_q003.mp3",
       "blocks": {
         "r1": {
@@ -105,11 +153,12 @@
     },
     {
       "question_id": "q004",
-      "question_type": "free",
+      "question_type": "required_wording",
       "highlight_phrases": [
-        "required_wording"
+        "effective",
+        "necessary"
       ],
-      "q": "effective, necessary",
+      "q": "Thanks. Here is my last question. Some people believe that individual actions are essential for protecting the environment, while others think government policies are more important. Do you think personal effort is really effective, or are larger systems more necessary? Explain why you think so.",
       "audio": "practice/audio/test03/test03_q004.mp3",
       "blocks": {
         "r1": {
