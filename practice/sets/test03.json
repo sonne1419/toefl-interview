@@ -78,7 +78,7 @@
   "questions": [
     {
       "question_id": "q003",
-      "question_type": "11",
+      "question_type": "free",
       "highlight_phrases": [
         "required_wording"
       ],
@@ -104,7 +104,7 @@
     },
     {
       "question_id": "q004",
-      "question_type": "12",
+      "question_type": "free",
       "highlight_phrases": [
         "required_wording"
       ],

@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0013",
+  "order": 16,
   "interviewer_gender": "af",
   "interviewer_image": "assets/af.webp",
   "show_question_prompt": true,
@@ -78,7 +79,7 @@
   "questions": [
     {
       "question_id": "q003",
-      "question_type": "63",
+      "question_type": "free",
       "highlight_phrases": [
         "required_wording"
       ],
@@ -104,7 +105,7 @@
     },
     {
       "question_id": "q004",
-      "question_type": "64",
+      "question_type": "free",
       "highlight_phrases": [
         "required_wording"
       ],

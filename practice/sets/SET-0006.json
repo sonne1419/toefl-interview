@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0006",
+  "order": 9,
   "interviewer_gender": "bm",
   "interviewer_image": "assets/bm.webp",
   "show_question_prompt": true,
@@ -78,7 +79,7 @@
   "questions": [
     {
       "question_id": "q003",
-      "question_type": "35",
+      "question_type": "free",
       "highlight_phrases": [
         "required_wording"
       ],
@@ -104,7 +105,7 @@
     },
     {
       "question_id": "q004",
-      "question_type": "36",
+      "question_type": "free",
       "highlight_phrases": [
         "required_wording"
       ],
