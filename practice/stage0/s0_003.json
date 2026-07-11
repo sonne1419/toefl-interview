@@ -1,0 +1,24 @@
+{
+  "id": "s0_003",
+  "label": "Q3 Future of online shopping (highlighted ending)",
+  "question_type": "required_wording",
+  "highlight_phrases": [
+    "even more popular in the future"
+  ],
+  "question": "Interesting. Next, I’d like to get your opinion. In recent years, online shopping has become more common. Do you think it will become even more popular in the future? Why or why not?",
+  "audio": "practice/audio/stage0/s0_003.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "Yes, I think online shopping will become even more popular in the future because it helps people shop more efficiently."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "For example, in the past, people had to go to physical stores to buy things. They had to drive to the mall, and they had to spend a lot of time looking for what they wanted. So shopping was not very efficient."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, people can shop online. They can search for products easily, and they can place orders very quickly. As a result, shopping has become much more efficient, and I believe this trend will continue and online shopping will become even more popular in the future."
+    }
+  }
+}

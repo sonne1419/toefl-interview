@@ -1,0 +1,24 @@
+{
+  "id": "s0_011",
+  "label": "Q3 The Future of Volunteering Abroad (highlighted ending)",
+  "question_type": "required_wording",
+  "highlight_phrases": [
+    "more common in the future"
+  ],
+  "question": "In recent years, more young people have started doing volunteer work abroad. Do you think this will become even more common in the future? Why or why not?",
+  "audio": "practice/audio/stage0/s0_011.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "Yes, I think volunteering abroad will become even more common in the future because it allows young people to have more fun."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "For example, in the past, there were not many chances to volunteer abroad. Volunteer work in local areas was quite limited and similar, so young people didn’t have much fun doing it."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, there are more volunteer opportunities available abroad. Young people can travel to different countries, experience new cultures, and meet new people. It is a lot of fun, so more and more young people want to do it now. I believe this trend will continue in the future, so volunteering abroad will become even more common."
+    }
+  }
+}

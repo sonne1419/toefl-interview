@@ -1,0 +1,22 @@
+{
+  "id": "s0_005",
+  "label": "Q1 News sources - less stressed",
+  "question_type": "free",
+  "highlight_phrases": [],
+  "question": "First, what kinds of news sources do your friends or people in your country usually prefer? For example, they might watch TV news, read newspapers, use news websites, or get news from social media. Why do you think they prefer those ways of getting news?",
+  "audio": "practice/audio/stage0/s0_005.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I think most people in my country prefer using social media to get news because it helps them feel less stressed."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "In the past, people usually watched TV news or read newspapers, and a lot of the news was quite serious and formal. As a result, people often did not feel relaxed after watching or reading the news."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, people can simply use social media. There are many different styles of news on social media. If they do not like serious reports, they can choose something funnier or more light-hearted. Therefore, getting news is not as stressful as it was before."
+    }
+  }
+}

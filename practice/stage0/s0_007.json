@@ -1,0 +1,24 @@
+{
+  "id": "s0_007",
+  "label": "Q3 Future of traditional news (highlighted ending) - less efficient",
+  "question_type": "required_wording",
+  "highlight_phrases": [
+    "less popular in the future"
+  ],
+  "question": "Interesting. Next, I’d like to get your opinion. In recent years, digital news platforms have become more common. Do you think traditional news sources will become less popular in the future? Why or why not?",
+  "audio": "practice/audio/stage0/s0_007.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "Yes, I think traditional news sources will become less popular in the future because they are less efficient than digital platforms."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "In the past, people relied on TV or newspapers to get news. They had to wait for a specific program or read long articles. So getting news from traditional sources was not very efficient."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, people can use digital platforms. They can get updates instantly and find information quickly. Everything is faster and more convenient. So now, getting information has become much more efficient, and I believe traditional news sources will become less popular in the future."
+    }
+  }
+}

@@ -1,0 +1,24 @@
+[build]
+  functions = "functions"
+
+[functions."transcribe"]
+  timeout = 60
+
+[functions."analyze"]
+  timeout = 60
+
+[functions."grammar"]
+  timeout = 60
+
+[functions."stage0-feedback"]
+  timeout = 60
+
+[functions."api"]
+  timeout = 30
+  included_files = ["practice/**"]
+
+[functions."validate-key"]
+  timeout = 10
+
+[functions."upload-to-drive"]
+  timeout = 30

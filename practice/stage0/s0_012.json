@@ -1,0 +1,24 @@
+{
+  "id": "s0_012",
+  "label": "Q4 Volunteering & Responsibility (highlighted ending)",
+  "question_type": "required_wording",
+  "highlight_phrases": [
+    "developing a sense of responsibility"
+  ],
+  "question": "Good points. I just have one more question. Some people believe that doing volunteer work is essential for developing a sense of responsibility and empathy. Do you agree, or do you think other activities can be just as beneficial?",
+  "audio": "practice/audio/stage0/s0_012.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I agree that doing volunteer work is essential for developing a sense of responsibility because it helps people know more about those who need help."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "For example, in the past, I didn’t do volunteer work at all. I didn’t know many poor people, and I did not feel that I was responsible for helping them."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But after I started helping out at a local charity, everything changed. I started talking with the poor families there, so I understood their needs and challenges much better. As a result, I really felt that I had a responsibility to help them more, and I also cherished what I had more."
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "s0_008",
+  "label": "Q4 Following news - less stressed",
+  "question_type": "free",
+  "highlight_phrases": [],
+  "question": "Good points. I just have one more question. Some people believe that people should pay close attention to the news every day. Do you agree, or do you think people do not need to follow the news too frequently? Explain why you think so.",
+  "audio": "practice/audio/stage0/s0_008.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I think people do not need to follow the news too frequently because it helps them feel less stressed."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "In the past, I used to check the news very frequently and spend a lot of time on it. A lot of the news was negative, and it made me worry about many things. So I often felt quite stressed."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, I do not check the news as often. I only look at the most important information, and I try not to spend too much time on it. So now, I feel much more relaxed, and I do not feel as stressed as before."
+    }
+  }
+}

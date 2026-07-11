@@ -1,0 +1,20 @@
+[
+  {
+    "file": "test01.json",
+    "label": "test01",
+    "set_id": "test01",
+    "questions": 4
+  },
+  {
+    "file": "test02.json",
+    "label": "test02",
+    "set_id": "test02",
+    "questions": 4
+  },
+  {
+    "file": "test03.json",
+    "label": "test03",
+    "set_id": "test03",
+    "questions": 4
+  }
+]

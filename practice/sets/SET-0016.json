@@ -1,0 +1,132 @@
+{
+  "set_id": "SET-0016",
+  "interviewer_gender": "am",
+  "interviewer_image": "assets/am.webp",
+  "show_question_prompt": true,
+  "show_sample_support": true,
+  "intro_text": "You have volunteered for a research study about social media. You will have a short online interview with a researcher. The researcher will ask you some questions.",
+  "intro_audio": "practice/audio/SET-0016/SET-0016_interview_intro.mp3",
+  "stage_meta": {
+    "1": {
+      "title": "Statement & Reason",
+      "instruction": "Say your answer and one reason."
+    },
+    "2": {
+      "title": "Before Example",
+      "instruction": "Practice the before/past example block."
+    },
+    "3": {
+      "title": "After Example",
+      "instruction": "Practice the after/current result block."
+    },
+    "4": {
+      "title": "Full Answer",
+      "instruction": "Use the short cues to speak the full answer."
+    }
+  },
+  "reasons": {
+    "r1": "Relationship / Interaction",
+    "r2": "Efficiency (via interaction, data collection, skills)",
+    "r3": "Stress/ Health"
+  },
+  "areas": {
+    "free": {
+      "1": {
+        "area1": "Statement: I would say ____ .\nReason: \nbecause it can ____. ",
+        "area2": "Relationship / Interaction\nEfficiency (via interaction, data collection, skills) \nStress/ Health",
+        "area3": "I would say exercising with others is better \nbecause it can help people build new relationships."
+      },
+      "2": {
+        "area1": "For example: before → [x statement ] →[x reason] ",
+        "area2": "Relationship / Interaction\nEfficiency (via interaction, data collection, skills) \nStress/ Health",
+        "area3": "For example, in the past, I usually exercised alone.\nTo be more specific, I went to the gym alone every day.\nIt could be quite boring sometimes, and I didn't make new friends."
+      },
+      "3": {
+        "area1": "However, After→ [statement] →[reason] ",
+        "area2": "Relationship / Interaction\nEfficiency (via interaction, data collection, skills) \nStress/ Health",
+        "area3": "However, since last year, I have started working out with other people at the gym. \nWe trained together, we exchanged fitness tips with one another, and we sometimes hung out together after each workout session.\nGradually, we became close, and some of them are my best friends now."
+      },
+      "4": {
+        "area1": "I would say ____ because it can ___\nFor example: before → [x statement ] →[x reason] \nHowever, After→ [statement] →[reason] ",
+        "area2": "Relationship / Interaction\nEfficiency (via interaction, data collection, skills) \nStress/ Health",
+        "area3": "I would say exercising with others is better because when people exercise with others, they can build new relationships.\nFor example, in the past, I usually exercised alone.\nTo be more specific, I went to the gym alone every day.\nIt could be quite boring sometimes, and I didn't make new friends.\nHowever, since last year, I have started working out with other people at the gym. \nWe trained together, we exchanged fitness tips with one another, and we sometimes hung out together after each workout session.\nGradually, we became close, and some of them are my best friends now."
+      }
+    },
+    "required": {
+      "1": {
+        "area1": "I would say ____ \nbecause it can ____",
+        "area2": "Relationship / Interaction\nEfficiency (via interaction, data collection, skills) \nStress/ Health",
+        "area3": "Statement: I would say AI will be more popular in the future \nReason: because it can help people learn more efficiently."
+      },
+      "2": {
+        "area1": "For example: before → [x statement ] →[x reason]",
+        "area2": "Relationship / Interaction\nEfficiency (via interaction, data collection, skills) \nStress/ Health",
+        "area3": "For example, in the past, people didn't use AI much.\nWhen they wanted to learn new skills, it wasn't easy. \nThey had to ask others, and it was not efficient."
+      },
+      "3": {
+        "area1": "After→ [ statement ] → [ reason ] → [highlighted ending]",
+        "area2": "Relationship / Interaction\nEfficiency (via interaction, data collection, skills) \nStress/ Health",
+        "area3": "However, since [AI] was invented, everything has changed.\nNow, if people want to learn something, they can simply ask ChatGPT and get the information instantly. AI can even write tools for them.\nAs a result, people can [work more efficiently] now.\nIt’s already very [popular], and I imagine it will only become more [popular in the future.]"
+      },
+      "4": {
+        "area1": "I would say ____ because when ___, ______ can ____ .\nFor example: before → [x statement ] →[x reason]. \nHowever, After→ [statement] →[reason] →[highlighted ending] ",
+        "area2": "Relationship / Interaction\nEfficiency (via interaction, data collection, skills) \nStress/ Health",
+        "area3": "I would say AI will be more popular in the future because when people use AI, they can learn more efficiently\nFor example, in the past, people didn't use AI much.\nWhen they wanted to learn new skills, it wasn't easy. \nThey had to ask others, and it was not efficient.\nHowever, since [AI] was invented, everything has changed.\nNow, if people want to learn something, they can simply ask ChatGPT and get the information instantly. AI can even write tools for them.\nAs a result, people can [work more efficiently] now.\nIt’s already very [popular], and I imagine it will only become more [popular in the future.]"
+      }
+    }
+  },
+  "questions": [
+    {
+      "question_id": "q003",
+      "question_type": "75",
+      "highlight_phrases": [
+        "required_wording"
+      ],
+      "q": "more people use stricter privacy rules before posting photos or personal updates in the future",
+      "audio": "practice/audio/SET-0016/SET-0016_q003.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    },
+    {
+      "question_id": "q004",
+      "question_type": "76",
+      "highlight_phrases": [
+        "required_wording"
+      ],
+      "q": "good online etiquette essential for maintaining friendships",
+      "audio": "practice/audio/SET-0016/SET-0016_q004.mp3",
+      "blocks": {
+        "r1": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r2": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        },
+        "r3": {
+          "cue_1": "",
+          "cue_2": "",
+          "cue_3": ""
+        }
+      }
+    }
+  ]
+}

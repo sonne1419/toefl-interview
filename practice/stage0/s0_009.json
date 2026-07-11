@@ -1,0 +1,22 @@
+{
+  "id": "s0_009",
+  "label": "Q1 What kind of volunteer work - less stressed",
+  "question_type": "free",
+  "highlight_phrases": [],
+  "question": "First, what kinds of volunteer activities do your friends or people in your country usually do? For example, they might help at community events, teach children, take part in environmental clean-ups, or support charities with money. Why do you think they choose those activities?",
+  "audio": "practice/audio/stage0/s0_009.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I think most people in my country prefer supporting charities with money because it is less stressful."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "For example, in the past, if people wanted to do volunteer work, they usually had to go out and join events or activities. Sometimes they had to travel to different places, and it could take a lot of time and energy. So the whole experience could be quite stressful."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, many people choose to support charities with money. They can donate online or support different organizations from home. They don’t need to go out, and they can decide when and how they want to help. So people feel less stressed when helping others."
+    }
+  }
+}

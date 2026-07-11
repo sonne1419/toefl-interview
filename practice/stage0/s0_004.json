@@ -1,0 +1,24 @@
+{
+  "id": "s0_004",
+  "label": "Q4 Planning purchases - less stressed",
+  "question_type": "required_wording",
+  "highlight_phrases": [
+    "good quality of life"
+  ],
+  "question": "Good points. I just have one more question. Some people believe that planning purchases carefully is essential for good quality of life. Do you agree, or do you think being flexible with spending can be just as beneficial? Explain why you think so.",
+  "audio": "practice/audio/stage0/s0_004.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I think being flexible with spending can be just as beneficial because it helps people feel less stressed, and feeling less stressed can improve their quality of life."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "For example, my mom always planned carefully before making any purchases. She spent a lot of time comparing prices and trying to get the best bargain. However, I often saw her getting stressed out because she worried too much about saving money."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "So now that I have my own money, I try to be a bit more flexible than my mom. If I really want to eat a nice meal or buy a nice shirt, I sometimes let myself enjoy it. I do not feel guilty or stressed about it, so my quality of life is better."
+    }
+  }
+}

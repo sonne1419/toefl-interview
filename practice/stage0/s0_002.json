@@ -1,0 +1,22 @@
+{
+  "id": "s0_002",
+  "label": "Q2 Online or physical stores - stronger relationships",
+  "question_type": "free",
+  "highlight_phrases": [],
+  "question": "That’s interesting. When you go shopping, do you prefer buying things online or going to physical stores? Why?",
+  "audio": "practice/audio/stage0/s0_002.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I prefer going to physical stores because it helps me build stronger relationships with my family and friends."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "For example, in the past, I used to shop online most of the time. I usually did it by myself, so I sometimes felt disconnected from others."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, I often go shopping with my family or friends. To be more specific, we go to shopping malls together on weekends. We walk around, talk with each other, and help each other choose things. As a result, our relationships have become much stronger."
+    }
+  }
+}

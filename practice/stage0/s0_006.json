@@ -1,0 +1,22 @@
+{
+  "id": "s0_006",
+  "label": "Q2 News from social media - fun",
+  "question_type": "free",
+  "highlight_phrases": [],
+  "question": "That’s interesting. When you get news, do you prefer using social media or official news websites? Why?",
+  "audio": "practice/audio/stage0/s0_006.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I prefer getting news from social media because it is more fun and engaging."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "In the past, when I used official news websites, the information was usually very long and boring. I had to read long articles, and I did not really enjoy reading them."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, I use social media to check the news. The news clips are usually short, and I can see a variety of opinions. Some of them are really entertaining. People also leave all kinds of funny comments under the clips, so I have more fun watching and reading the news."
+    }
+  }
+}

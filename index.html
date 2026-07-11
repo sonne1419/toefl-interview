@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speaking | Interview Practice</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.analysis-feedback-line { padding: 4px 0; line-height: 1.6; }
+.analysis-feedback-line + .analysis-feedback-line { border-top: 1px solid #f0f0f0; margin-top: 4px; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: ACCESS GATE
+═══════════════════════════════════════ -->
+<div id="screen-gate" class="screen active">
+  <div class="center-card">
+    <div class="card-badge">Speaking Practice</div>
+    <h1>Interview Practice</h1>
+    <p class="card-desc">Please enter your access key to continue.</p>
+    <div class="field-group">
+      <label class="field-label">Access Key</label>
+      <div class="key-input-wrap">
+        <input type="password" id="key-input" placeholder="Enter your key" autocomplete="off" spellcheck="false" />
+        <button type="button" id="btn-toggle-key" class="btn-eye" title="Show/hide key">👁</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Analysis language <span style="color:#d33;">*</span></label>
+      <input type="text" id="analysis-lang-input" placeholder="Type your native language"
+             autocomplete="off" spellcheck="false"
+             style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:8px;font-size:15px;" />
+      <p style="margin:6px 2px 0;font-size:12px;color:#999;line-height:1.5;">
+        e.g. English, 繁體中文, 日本語, Telugu, Tagalog, Español, Tiếng Việt, Русский, Türkçe
+      </p>
+    </div>
+    <div id="gate-status" class="status-line"></div>
+    <button id="btn-gate-submit" class="btn-primary">Continue →</button>
+    <hr style="border:none;border-top:1px solid #e5e5e5;margin:16px 0 12px;" />
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#555;cursor:pointer;user-select:none;">
+      <input type="checkbox" id="remember-key" checked style="cursor:pointer;" />
+      Remember my key on this device
+    </label>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: START
+═══════════════════════════════════════ -->
+<div id="screen-start" class="screen hidden">
+  <div class="center-card">
+    <div class="card-badge">Speaking Practice</div>
+    <h1>Interview Practice</h1>
+    <p class="card-desc">Select a test and stage to begin.</p>
+
+    <div class="field-group">
+      <label class="field-label">Stage</label>
+      <select id="stage-selector">
+        <option value="">-- Select stage --</option>
+        <option value="0">Stage 0 — Learn from Samples</option>
+        <option value="1">Statement &amp; Reason (10s)</option>
+        <option value="2">Before Example (15s)</option>
+        <option value="3">After Example (20s)</option>
+        <option value="4">Full Answer</option>
+        <option value="5">Exam Mode</option>
+      </select>
+    </div>
+
+    <div class="field-group" id="test-selector-group" style="display:none;">
+      <label class="field-label">Test</label>
+      <select id="test-selector">
+        <option value="">Loading tests...</option>
+      </select>
+    </div>
+
+    <div id="start-status" class="status-line"></div>
+    <button id="btn-start-session" class="btn-primary" disabled>Start Session →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: MIC INSTRUCTION
+═══════════════════════════════════════ -->
+<div id="screen-mic-instruction" class="screen hidden">
+  <div class="center-card" style="max-width:560px;">
+    <div class="card-badge">Microphone Setup</div>
+    <h1>Allow Microphone Access</h1>
+
+    <p class="card-desc">This tool records your spoken responses. When the browser asks for microphone access, you <strong>must</strong> click <strong style="color:#00736b">Allow on every visit</strong> — not "Allow this time."</p>
+
+    <div class="mic-popup-preview">
+      <div class="mic-popup-header">
+        <div class="mic-popup-icon">🔒</div>
+        <div>
+          <div class="mic-popup-domain">interview-practice.netlify.app</div>
+          <div class="mic-popup-subtitle">wants to use your microphone</div>
+        </div>
+      </div>
+      <div class="mic-popup-options">
+        <div class="mic-popup-option recommended">
+          Allow on every visit
+          <span class="mic-popup-tag">✓ Click this one</span>
+        </div>
+        <div class="mic-popup-option muted">Allow this time</div>
+        <div class="mic-popup-option muted">Don't allow</div>
+      </div>
+    </div>
+
+    <div class="mic-warning-box">
+      ⚠️ If you click "Allow this time," your microphone may stop working mid-session and your recordings will not be saved.
+    </div>
+
+    <label class="mic-understand-label">
+      <input type="checkbox" id="mic-understand-check">
+      I understand. I will click <strong style="color:#00736b">Allow on every visit</strong> when prompted.
+    </label>
+
+    <button id="btn-mic-continue" class="btn-primary" disabled>Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: STAGE 0
+═══════════════════════════════════════ -->
+<div id="screen-stage0" class="screen hidden">
+
+  <div id="stage0-header">
+    <div id="stage0-section-label">Stage 0 — Learn from Samples</div>
+    <button id="btn-end-stage0" class="btn-end">End Session</button>
+  </div>
+
+  <div id="stage0-body">
+
+    <div id="stage0-list-panel">
+      <div class="stage0-list-title">Samples</div>
+      <div id="stage0-sample-list"></div>
+    </div>
+
+    <div id="stage0-content-panel">
+
+      <div id="stage0-instructions" style="background:#f0f9f8;border:1px solid #b2dbd8;border-radius:10px;margin-bottom:16px;overflow:hidden;">
+        <!-- Collapsed bar — always visible -->
+        <div id="stage0-instr-bar" onclick="toggleStage0Instructions()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;user-select:none;">
+          <span style="font-weight:700;font-size:13px;color:#00736b;">📖 <span data-tr="How to use this page">How to use this page</span></span>
+          <span id="stage0-instr-chevron" style="font-size:13px;color:#00736b;transition:transform .25s;">▼</span>
+        </div>
+        <!-- Expandable body -->
+        <div id="stage0-instr-body" style="padding:0 16px 14px 16px;font-size:13.5px;line-height:1.7;color:#1a1a1a;">
+          <div style="margin-bottom:8px;" data-tr="This stage helps you become familiar with answer structures and common reasons by copying actual samples.">This stage helps you become familiar with answer structures and common reasons by copying actual samples.</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+            <div><strong data-tr="Step 1 — Read">Step 1 — Read</strong> <span data-tr="the question, answer structure, and full model answer below.">the question, answer structure, and full model answer below.</span></div>
+            <div><strong data-tr="Step 2 — Hide &amp; Record">Step 2 — Hide &amp; Record</strong> <span data-tr="when you feel ready. Press Full sentences: ON to hide them, then hit the record button. You have 45 seconds.">when you feel ready. Press <em>Full sentences: ON</em> to hide them, then hit the record button. You have 45 seconds.</span></div>
+            <div><strong data-tr="Step 3 — Compare">Step 3 — Compare</strong> <span data-tr="your transcript with the model answer when you're done.">your transcript with the model answer when you're done.</span></div>
+          </div>
+          <div style="color:#555;font-size:12.5px;display:flex;flex-direction:column;gap:3px;">
+            <div data-tr="💡 Forgot something mid-recording? Turn the full sentences back on anytime.">💡 Forgot something mid-recording? Turn the full sentences back on anytime.</div>
+            <div data-tr="💡 Answer too long? Feel free to trim words to make it your own.">💡 Answer too long? Feel free to trim words to make it your own.</div>
+          </div>
+          <div style="margin-top:12px;">
+            <button onclick="window.toggleStage0Instructions()" data-tr="Got it, let's start →" style="background:#00736b;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;">Got it, let's start →</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="stage0-question-area" class="practice-card hidden" style="margin-bottom:12px;">
+        <div class="practice-card-title">Question</div>
+        <div id="stage0-question-text"></div>
+        <audio id="stage0-audio-player" controls class="question-audio-player"></audio>
+      </div>
+
+      <div id="stage0-table-area" class="practice-card hidden">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap;">
+          <div style="display:inline-flex;align-items:center;gap:10px;">
+            <span style="font-size:13px;font-weight:700;color:#00736b;">🌐</span>
+            <div id="stage0-lang-switch" role="switch" tabindex="0"
+              style="position:relative;display:inline-flex;align-items:center;width:230px;height:38px;border-radius:19px;background:#e8f5f4;border:2px solid #00736b;cursor:pointer;user-select:none;padding:0;">
+              <span id="stage0-lang-knob"
+                style="position:absolute;top:2px;left:2px;width:111px;height:30px;border-radius:15px;background:#00736b;transition:left .22s ease;box-shadow:0 1px 4px rgba(0,0,0,.2);"></span>
+              <span id="stage0-lang-seg-native"
+                style="position:relative;z-index:1;flex:1;text-align:center;font-size:13px;font-weight:800;color:#fff;pointer-events:none;">My language</span>
+              <span id="stage0-lang-seg-en"
+                style="position:relative;z-index:1;flex:1;text-align:center;font-size:13px;font-weight:800;color:#00736b;pointer-events:none;">English</span>
+            </div>
+          </div>
+          <div style="display:inline-flex;align-items:center;gap:12px;">
+            <div style="font-size:12px;color:#888;">Model answer: <b id="stage0-word-count">—</b> words</div>
+            <label id="stage0-full-toggle-label" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:10px 18px;border-radius:12px;border:2.5px solid #00736b;background:#e8f5f4;font-size:15px;font-weight:700;color:#00736b;user-select:none;transition:background .2s,border-color .2s,color .2s;flex-shrink:0;">
+              <input type="checkbox" id="toggle-stage0-full" checked style="position:absolute;opacity:0;width:0;height:0;">
+              <span id="stage0-toggle-icon" style="font-size:18px;line-height:1;">👁</span>
+              <span id="stage0-toggle-text">Full sentences: ON</span>
+            </label>
+          </div>
+        </div>
+
+        <table class="stage0-table">
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>Answer Structure</th>
+              <th id="stage0-full-header">Full Sentence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="stage0-block-label">Statement &amp; Reason</td>
+              <td id="stage0-structure-1" class="stage0-structure"></td>
+              <td id="stage0-full-1" class="stage0-full"></td>
+            </tr>
+            <tr>
+              <td class="stage0-block-label">Before Example</td>
+              <td id="stage0-structure-2" class="stage0-structure"></td>
+              <td id="stage0-full-2" class="stage0-full"></td>
+            </tr>
+            <tr>
+              <td class="stage0-block-label">After Example</td>
+              <td id="stage0-structure-3" class="stage0-structure"></td>
+              <td id="stage0-full-3" class="stage0-full"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div id="stage0-record-area" style="margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <button id="btn-stage0-record" class="btn-record pulse">
+            <div class="record-dot"></div>
+          </button>
+          <div id="stage0-timer-box" class="hidden">
+            <div id="stage0-timer-label">RECORDING TIME</div>
+            <div id="stage0-timer-value">
+              <span id="stage0-timer-digits">00:00</span>
+            </div>
+          </div>
+          <div id="stage0-post-record" class="hidden" style="display:flex;flex-direction:column;gap:8px;width:100%;">
+            <button id="btn-stage0-record-again" class="btn-record-again">Record Again</button>
+            <button id="btn-stage0-save" class="btn-save-next">Save &amp; Get Transcript</button>
+          </div>
+        </div>
+
+        <div id="stage0-results-area" class="hidden" style="margin-top:16px;border-top:1px solid #eee;padding-top:14px;">
+          <div class="result-transcript-label" id="stage0-transcript-label">Transcript</div>
+          <div id="stage0-transcript-text" class="result-transcript-text" style="margin-bottom:8px;"></div>
+          <audio id="stage0-playback" controls class="question-audio-player" style="margin-bottom:10px;"></audio>
+          <button id="btn-stage0-feedback" class="btn-secondary" style="width:auto;padding:8px 20px;">Similarity Check</button>
+          <div id="stage0-feedback-text" class="result-grammar-block hidden" style="margin-top:10px;"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <div class="screen-footer" style="text-align:center;padding:8px 20px;font-size:12px;color:#888;border-top:1px solid #eee;flex-shrink:0;">Click <strong>End Session</strong> in the upper right corner to exit and download your practice record.</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: MIC WARMUP
+═══════════════════════════════════════ -->
+<div id="screen-warmup" class="screen hidden">
+  <div class="center-card">
+    <div class="card-badge">Microphone Setup</div>
+    <h1>Preparing Microphone</h1>
+    <p class="card-desc">Please wait while we set up your microphone. Do not speak yet.</p>
+    <div id="warmup-status" class="status-line">Click below to begin setup.</div>
+    <button id="btn-enable-mic" class="btn-primary">Set Up Microphone</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: INTERVIEW PRACTICE
+═══════════════════════════════════════ -->
+<div id="screen-interview" class="screen hidden">
+
+  <div id="interview-header">
+    <div id="interview-header-left">
+      <span id="interview-section-label">Speaking Practice</span>
+      <span id="interview-question-label"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="btn-skip-question" class="btn-secondary" style="padding:5px 12px;font-size:12px;color:#888;border-color:#ccc;">Skip this question</button>
+      <button id="btn-end-session" class="btn-end">End Session</button>
+    </div>
+  </div>
+
+  <!-- Stage intro collapsible -->
+  <div id="stage-intro-box" style="background:#f0f9f8;border-bottom:1px solid #b2dbd8;overflow:hidden;">
+    <div id="stage-intro-bar" onclick="toggleStageIntro()" style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px;cursor:pointer;user-select:none;">
+      <span id="stage-intro-bar-text" style="font-weight:600;font-size:13px;color:#00736b;">📋 About this stage</span>
+      <span id="stage-intro-chevron" style="font-size:13px;color:#00736b;transition:transform .25s;">▼</span>
+    </div>
+    <div id="stage-intro-body" style="padding:0 20px 12px 20px;font-size:13px;line-height:1.7;color:#333;">
+      <span id="stage-intro-text"></span>
+      <div style="margin-top:10px;">
+        <button onclick="toggleStageIntro()" style="background:#00736b;color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;">Got it →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="interview-body">
+
+    <!-- Left col -->
+    <div id="interview-left">
+      <img id="interview-img" src="" alt="Interviewer" />
+
+      <!-- Record button -->
+      <button id="btn-record" class="btn-record hidden" title="Start Recording">
+        <div class="record-dot"></div>
+      </button>
+
+      <!-- Record button -->
+      <!-- Post-recording buttons -->
+      <div id="post-record-buttons" class="hidden">
+        <button id="btn-record-again" class="btn-record-again">Record Again</button>
+        <button id="btn-save-next" class="btn-save-next">Save &amp; Next →</button>
+      </div>
+
+      <!-- Timer -->
+      <div id="response-timer-box" class="hidden">
+        <div id="response-timer-label">RESPONSE TIME</div>
+        <div id="response-timer-value">
+          <span id="response-timer-digits">00:10</span>
+        </div>
+      </div>
+
+
+    </div>
+
+    <!-- Right col -->
+    <div id="interview-practice-panel">
+
+      <div id="practice-question-card" class="practice-card hidden">
+        <div class="practice-card-header" style="justify-content:flex-start;align-items:center;gap:14px;">
+          <div class="practice-card-title">Question</div>
+          <label id="toggle-question-label" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;font-size:15px;font-weight:600;color:#00736b;">
+            <input type="checkbox" id="toggle-question" checked style="width:20px;height:20px;accent-color:#00736b;cursor:pointer;">
+            <span class="toggle-text">Hide text</span>
+          </label>
+        </div>
+        <div id="practice-question-text"></div>
+        <audio id="question-audio-player" controls class="question-audio-player"></audio>
+      </div>
+
+      <div id="practice-support-card" class="practice-card hidden">
+        <div class="practice-card-header" style="display:block;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div id="practice-stage-title"></div>
+            <label id="toggle-support-label" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;font-size:15px;font-weight:600;color:#00736b;">
+              <input type="checkbox" id="toggle-support" checked style="width:20px;height:20px;accent-color:#00736b;cursor:pointer;">
+              <span class="toggle-text">Hide text</span>
+            </label>
+          </div>
+          <div id="practice-stage-instruction"></div>
+        </div>
+        <div id="practice-reason-list"></div>
+      </div>
+
+    </div>
+  </div>
+  <div class="screen-footer" style="text-align:center;padding:8px 20px;font-size:12px;color:#888;border-top:1px solid #eee;flex-shrink:0;">Click <strong>End Session</strong> in the upper right corner to exit and download your practice record.</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: EXAM MODE (STAGE 5)
+═══════════════════════════════════════ -->
+<div id="screen-exam" class="screen hidden" style="background:#fff;">
+
+  <div id="exam-header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#00736b;color:#fff;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span style="font-weight:700;font-size:15px;">Speaking Practice — Exam Mode</span>
+      <span id="exam-question-label" style="font-size:13px;opacity:.85;"></span>
+    </div>
+    <button id="btn-end-exam" class="btn-end" style="border-color:#fff;color:#fff;">End Session</button>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:32px 20px;">
+    <p id="exam-prompt-line" style="font-size:18px;font-weight:500;color:#1a1a1a;text-align:center;">Please answer the interviewer's questions.</p>
+    <p id="exam-intro-text" style="display:none;font-size:17px;line-height:1.6;color:#1a1a1a;text-align:center;max-width:640px;"></p>
+    <img id="exam-img" src="" alt="Interviewer" style="width:260px;max-width:80vw;border-radius:12px;object-fit:cover;" />
+    <div id="exam-timer-box" style="background:#2c2c2c;border-radius:12px;overflow:hidden;width:280px;max-width:90vw;">
+      <div style="background:#444;padding:8px 16px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.1em;color:#fff;">RESPONSE TIME</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;">
+        <span id="exam-mic-icon" style="font-size:26px;opacity:.4;">🎙️</span>
+        <span id="exam-timer-digits" style="font-size:32px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.04em;">00:45</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:8px 20px;font-size:12px;color:#888;border-top:1px solid #eee;flex-shrink:0;">Click <strong>End Session</strong> in the upper right corner to exit and download your practice record.</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: SET COMPLETE
+═══════════════════════════════════════ -->
+<div id="screen-set-complete" class="screen hidden">
+  <div class="center-card">
+    <div class="card-badge">Set Complete</div>
+    <h1 id="set-complete-title"></h1>
+    <p id="set-complete-desc" class="card-desc"></p>
+    <button id="btn-continue-practice" class="btn-primary">Practice Another Test →</button>
+    <button id="btn-end-session-complete" class="btn-secondary">End Session &amp; Download</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: RESULTS
+═══════════════════════════════════════ -->
+<div id="screen-end" class="screen hidden">
+  <div id="results-inner">
+    <div class="results-top-bar">
+      <h2>Session Complete</h2>
+      <div class="results-top-actions">
+        
+        <button id="btn-new-session" class="btn-new-session-top">Start New Session</button>
+      </div>
+    </div>
+    <hr class="results-divider">
+    <p id="end-summary" class="end-summary"></p>
+    <div id="transcription-status" class="transcription-status hidden"></div>
+    <div id="results-list"></div>
+  </div>
+</div>
+
+<!-- Saving modal -->
+<div id="saving-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2>Saving...</h2>
+    <hr>
+    <p>Please wait while we save your response.</p>
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

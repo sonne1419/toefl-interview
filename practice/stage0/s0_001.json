@@ -1,0 +1,22 @@
+{
+  "id": "s0_001",
+  "label": "Q1 Shopping preference - less stressed",
+  "question_type": "free",
+  "highlight_phrases": [],
+  "question": "First, what kinds of shopping do your friends or people in your country usually prefer? For example, they might shop online, visit shopping malls, go to local markets, or look for discounts and sales. Why do you think they prefer those ways of shopping?",
+  "audio": "practice/audio/stage0/s0_001.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I think most people in my country prefer shopping online because it helps them feel less stressed."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "For example, in the past, people had to go to shopping malls or local markets when they wanted to buy something. Those places were usually very crowded. As a result, shopping could be stressful."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, people can simply shop online. They can stay at home and get everything they need. They can also compare prices easily and avoid crowded places. So now, shopping is much more convenient, and people feel more relaxed and less stressed."
+    }
+  }
+}

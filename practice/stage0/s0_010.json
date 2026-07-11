@@ -1,0 +1,22 @@
+{
+  "id": "s0_010",
+  "label": "Q2 Volunteer locally or abroad - gain confidence",
+  "question_type": "free",
+  "highlight_phrases": [],
+  "question": "That’s interesting. When you do volunteer work, do you prefer helping locally in your community or volunteering abroad? Why?",
+  "audio": "practice/audio/stage0/s0_010.mp3",
+  "blocks": {
+    "statement_reason": {
+      "structure": "",
+      "full": "I prefer helping locally in my community because it helps me gain confidence."
+    },
+    "before_example": {
+      "structure": "",
+      "full": "For example, in the past, I didn’t do much volunteer work in my local area, and I didn’t really interact with people in my community. I wasn’t very confident when talking to others, and sometimes I felt a bit uncomfortable."
+    },
+    "after_example": {
+      "structure": "",
+      "full": "But now, I volunteer locally. I help people in my community, and I have more chances to talk to them. Sometimes people thank me, and sometimes they even compliment me for what I do. So now I feel more confident when interacting with others, and I feel much better about myself."
+    }
+  }
+}
