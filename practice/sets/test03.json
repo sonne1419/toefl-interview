@@ -1,11 +1,12 @@
 {
   "set_id": "test03",
+  "order": 3,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
   "show_question_prompt": true,
   "show_sample_support": true,
-  "intro_text": "",
-  "intro_audio": "",
+  "intro_text": "You have volunteered for a research study. You will have a short online interview with a researcher. The researcher will ask you some questions.",
+  "intro_audio": "practice/audio/test03/test03_interview_intro.mp3",
   "stage_meta": {
     "1": {
       "title": "Statement & Reason",
