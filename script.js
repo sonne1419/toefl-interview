@@ -1549,7 +1549,10 @@ async function exportResultsDoc(opts) {
     const stageTitle = STAGE_META[r.stage] ? STAGE_META[r.stage].title : ("Stage " + r.stage);
     const header = `<h2 style="color:#00736b;font-size:16px">${escapeHTML(r.set_label || "")} — Q${r.question_index || (i + 1)} — ${escapeHTML(stageTitle)}</h2>`;
     const question = r.q ? `<p><strong>Question:</strong> ${escapeHTML(r.q)}</p>` : "";
-    const transcript = `<p><strong>Transcript:</strong> ${escapeHTML(r.transcript || "(no speech detected)")}</p>`;
+    const words = countWords(r.transcript || "");
+    const transcript =
+      `<p><strong>Transcript — ${words} words · Responses of 80 words and above are recommended.</strong><br>` +
+      `${escapeHTML(r.transcript || "(no speech detected)")}</p>`;
     const links = `<p>${origLink} &nbsp;|&nbsp; ${yourLink}</p>`;
 
     // Feedback section: band+feedback (scored) OR grammar feedback (grammar stages)
@@ -1558,7 +1561,7 @@ async function exportResultsDoc(opts) {
       const result = parsed[qKey] || {};
       const band   = (result.band != null) ? result.band : "N/A";
       const fb     = (result.feedback || "").split("\n").map(escapeHTML).join("<br>");
-      feedback = `<p><strong>Band:</strong> ${escapeHTML(String(band))}</p>` +
+      feedback = `<p><strong>Band ${escapeHTML(String(band))} &middot; ${words} words</strong></p>` +
                  (fb ? `<p><strong>Feedback:</strong><br>${fb}</p>` : "");
     } else if (grammarParsed) {
       const gtext = grammarParsed[qKey] || "(No grammar errors found)";
