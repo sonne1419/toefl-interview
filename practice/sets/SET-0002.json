@@ -81,7 +81,7 @@
       "question_id": "q001",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "What kinds of after-school activities do children in your community generally like? For example, do they prefer sports, music, art, computer games, or other activities?",
+      "q": "What kinds of after-school activities do children in your community generally like? For example, do they prefer sports, music, or other activities?",
       "audio": "practice/audio/SET-0002/SET-0002_q001.mp3",
       "blocks": {
         "r1": {

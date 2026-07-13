@@ -81,7 +81,7 @@
       "question_id": "q001",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "What kinds of news stories are most likely to influence people's decisions? For example, consider stories about health, weather, education, or local events. Why do these stories have an influence?",
+      "q": "What kinds of news stories are most likely to influence people's decisions? For example, consider stories about health, education, or local events. Why do these stories have an influence?",
       "audio": "practice/audio/SET-0004/SET-0004_q001.mp3",
       "blocks": {
         "r1": {
@@ -157,7 +157,7 @@
       "highlight_phrases": [
         "being an informed citizen"
       ],
-      "q": "Good points. I just have one more question.\nIs following the news regularly essential for being an informed citizen, or can other things also help people become informed? For example, can community involvement or conversations with others serve the same purpose? Explain.",
+      "q": "Good points. I just have one more question. Is following the news regularly essential for being an informed citizen, or can other things also help people become informed? Explain.",
       "audio": "practice/audio/SET-0004/SET-0004_q004.mp3",
       "blocks": {
         "r1": {

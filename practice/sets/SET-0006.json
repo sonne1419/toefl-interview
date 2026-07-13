@@ -81,7 +81,7 @@
       "question_id": "q001",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "What kinds of public places do people in your community generally like to visit? For example, do they prefer parks, cafés, libraries, shopping centers, or other places?",
+      "q": "What kinds of public places do people in your community generally like to visit? For example, do they prefer parks, cafés, or other places?",
       "audio": "practice/audio/SET-0006/SET-0006_q001.mp3",
       "blocks": {
         "r1": {
@@ -158,7 +158,7 @@
       "highlight_phrases": [
         "public spaces are especially important for helping people feel connected to their community"
       ],
-      "q": "Good points. I just have one more question.\nDo you agree that public spaces are especially important for helping people feel connected to their community, or can other activities build the same connection? For example, can local events or volunteer projects help people feel connected? Explain.",
+      "q": "Good points. I just have one more question. Do you agree that public spaces are especially important for helping people feel connected to their community, or can other activities build the same connection? Explain.",
       "audio": "practice/audio/SET-0006/SET-0006_q004.mp3",
       "blocks": {
         "r1": {

@@ -81,7 +81,7 @@
       "question_id": "q001",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "What kinds of music-related activities do your family or friends generally like? For example, do they prefer singing, playing instruments, going to performances, sharing playlists, or other activities?",
+      "q": "What kinds of music-related activities do your family or friends generally like? For example, do they prefer singing, playing instruments, or other activities?",
       "audio": "practice/audio/SET-0009/SET-0009_q001.mp3",
       "blocks": {
         "r1": {

@@ -81,7 +81,7 @@
       "question_id": "q001",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "What kinds of campus activities do students around you usually like, such as sports, student clubs, public talks, volunteer events, or social gatherings?",
+      "q": "What kinds of campus activities do students around you usually like, such as sports, student clubs, or volunteer events?",
       "audio": "practice/audio/SET-0024/SET-0024_q001.mp3",
       "blocks": {
         "r1": {
