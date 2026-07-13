@@ -364,7 +364,7 @@ function playAudioReliable(src) {
 function stopAudio() {
   const audio = $("question-audio-player");
   audio.pause();
-  audio.src = "";
+  audio.currentTime = 0;   // rewind but keep the src so the bar stays replayable
   if (STATE._audioResolve) {
     const r = STATE._audioResolve;
     STATE._audioResolve = null;
@@ -798,6 +798,14 @@ async function startPractice() {
   const task  = STATE.currentTask;
   const stage = STATE.selectedStage;
 
+  // Prime the audio OUTPUT pipeline once per session so the first question's
+  // audio doesn't get its opening clipped. (Matches the mock-test tool's fix.)
+  if (!STATE.audioPrimed) {
+    await warmupAudioContext();
+    STATE.audioPrimed = true;
+    await sleep(200);
+  }
+
   // Load stage meta and reasons from JSON if present, else use defaults
   if (task.stage_meta) {
     Object.keys(task.stage_meta).forEach(k => {
@@ -956,6 +964,13 @@ async function startPractice() {
 async function runExamSession(task) {
   const questions    = task.questions || [];
   const responseTime = task.response_time || 45;
+
+  // Prime the audio OUTPUT pipeline once so the first audio isn't clipped.
+  if (!STATE.audioPrimed) {
+    await warmupAudioContext();
+    STATE.audioPrimed = true;
+    await sleep(200);
+  }
 
   const imgEl = $("exam-img");
   if (imgEl) {
