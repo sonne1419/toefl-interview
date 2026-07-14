@@ -156,9 +156,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "entertainment essential for helping people relax and recharge"
+        "keeping life in balance"
       ],
-      "q": "Good points. I just have one more question.\nIs entertainment essential for helping people relax and recharge, or can other activities and habits achieve the same goal? Explain your answer.",
+      "q": "Good points. I just have one more question. Do you think entertainment is important for keeping life in balance, or can other activities and habits do the same? Explain.",
       "audio": "practice/audio/SET-0013/SET-0013_q004.mp3",
       "blocks": {
         "r1": {

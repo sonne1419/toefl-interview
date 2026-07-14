@@ -105,7 +105,7 @@
       "question_id": "q002",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "I see.\nIf you were spending time with a younger child, would you prefer to teach the child something useful or just play and relax together? Why?",
+      "q": "I see.\nWhen you spend time with a younger child, do you prefer to teach the child something useful or just play and relax together? Why?",
       "audio": "practice/audio/SET-0002/SET-0002_q002.mp3",
       "blocks": {
         "r1": {
@@ -155,9 +155,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "develop confidence"
+        "building children's confidence"
       ],
-      "q": "Good points. I just have one more question.\nIs participating in organized after-school activities essential for children to develop confidence, or can free time, family support, and friendships help them develop it? Explain.",
+      "q": "Good points. I just have one more question. Do you think organized after-school activities are important for building children's confidence, or can free time, family, and friendships do that just as well? Explain.",
       "audio": "practice/audio/SET-0002/SET-0002_q004.mp3",
       "blocks": {
         "r1": {

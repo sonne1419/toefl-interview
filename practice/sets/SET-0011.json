@@ -155,9 +155,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "regular volunteering essential for becoming a caring person"
+        "becoming a caring person"
       ],
-      "q": "Good points. I just have one more question.\nIs regular volunteering essential for becoming a caring person, or can family, school, and everyday experiences also help people develop this quality? Explain.",
+      "q": "Good points. I just have one more question. Do you think regular volunteering is what makes someone a caring person, or can family, school, and everyday experiences shape that too? Explain.",
       "audio": "practice/audio/SET-0011/SET-0011_q004.mp3",
       "blocks": {
         "r1": {

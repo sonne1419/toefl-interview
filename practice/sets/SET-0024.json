@@ -105,7 +105,7 @@
       "question_id": "q002",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "I see. And when you have free time on campus, what do you usually do: attend a club activity, exercise, study in a common area, meet friends, or something else?",
+      "q": "I see. When you have free time on campus, do you join a club activity, exercise, or spend time with friends? Why?",
       "audio": "practice/audio/SET-0024/SET-0024_q002.mp3",
       "blocks": {
         "r1": {
@@ -156,9 +156,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "joining campus clubs an important way to maintain a sense of community at a university"
+        "a successful student life"
       ],
-      "q": "Good points. I just have one more question. Is joining campus clubs an important way to maintain a sense of community at a university, or can that sense of community be maintained in other ways? Why?",
+      "q": "Good points. I just have one more question. Do you think joining campus clubs is important for a successful student life, or can students get that experience in other ways? Explain.",
       "audio": "practice/audio/SET-0024/SET-0024_q004.mp3",
       "blocks": {
         "r1": {

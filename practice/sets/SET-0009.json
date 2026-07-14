@@ -105,7 +105,7 @@
       "question_id": "q002",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "I see.\nWhen you listen to music to relax, do you prefer listening alone with headphones or listening together with other people? Why?",
+      "q": "I see.\nWhen you listen to music, do you prefer listening alone with headphones or listening together with other people? Why?",
       "audio": "practice/audio/SET-0009/SET-0009_q002.mp3",
       "blocks": {
         "r1": {
@@ -155,9 +155,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "develop creativity"
+        "connecting with other people"
       ],
-      "q": "Good points. I just have one more question.\nWhat other activities or ways can help people develop creativity? Explain your answer.",
+      "q": "Good points. I just have one more question. Do you think taking part in music activities helps people connect with one another, or do other activities bring people together just as well? Explain.",
       "audio": "practice/audio/SET-0009/SET-0009_q004.mp3",
       "blocks": {
         "r1": {

@@ -155,9 +155,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "high income essential for financial security"
+        "a good quality of life"
       ],
-      "q": "Good points. I just have one more question.\nIs having a high income essential for financial security, or can good habits and other factors achieve the same goal? Explain your answer.",
+      "q": "Good points. I just have one more question. Do you think a high income is necessary for a good quality of life, or can good habits and other factors matter just as much? Explain.",
       "audio": "practice/audio/SET-0014/SET-0014_q004.mp3",
       "blocks": {
         "r1": {

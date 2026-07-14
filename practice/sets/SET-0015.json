@@ -155,9 +155,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "attending classes regularly essential for students to learn well"
+        "succeeding academically"
       ],
-      "q": "Good points. I just have one more question.\nIs attending classes regularly essential for students to learn well, or can independent study and other methods be just as effective? Explain.",
+      "q": "Good points. I just have one more question. Do you think attending classes regularly is necessary for students to succeed academically, or can independent study and other methods work just as well? Explain.",
       "audio": "practice/audio/SET-0015/SET-0015_q004.mp3",
       "blocks": {
         "r1": {

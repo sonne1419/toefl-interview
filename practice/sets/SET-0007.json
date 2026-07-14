@@ -81,7 +81,7 @@
       "question_id": "q001",
       "question_type": "free",
       "highlight_phrases": [],
-      "q": "If you were trying to exercise regularly, would you prefer following the same routine each time or doing different activities? Why?",
+      "q": "When you exercise regularly, do you prefer following the same routine each time or doing different activities? Why?",
       "audio": "practice/audio/SET-0007/SET-0007_q001.mp3",
       "blocks": {
         "r1": {
@@ -155,9 +155,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "regular exercise helps people handle stress better"
+        "maintaining good mental health"
       ],
-      "q": "Good points. I just have one more question.\nSome people believe regular exercise helps people handle stress better. Do you agree or disagree? Explain why.",
+      "q": "Good points. I just have one more question. Do you think regular exercise is important for maintaining good mental health, or can other habits keep the mind healthy just as well? Explain.",
       "audio": "practice/audio/SET-0007/SET-0007_q004.mp3",
       "blocks": {
         "r1": {

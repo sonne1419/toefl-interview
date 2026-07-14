@@ -155,9 +155,9 @@
       "question_id": "q004",
       "question_type": "required_wording",
       "highlight_phrases": [
-        "being an informed citizen"
+        "making good decisions"
       ],
-      "q": "Good points. I just have one more question. Is following the news regularly essential for being an informed citizen, or can other things also help people become informed? Explain.",
+      "q": "Good points. I just have one more question. Is following the news regularly essential for making good decisions, or can other things help just as much? Explain.",
       "audio": "practice/audio/SET-0004/SET-0004_q004.mp3",
       "blocks": {
         "r1": {
