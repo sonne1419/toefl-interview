@@ -95,6 +95,14 @@ function callOpenAI(apiKey, systemPrompt, userContent) {
         let data = "";
         res.on("data", chunk => (data += chunk));
         res.on("end", () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            let msg = data;
+            try { const j = JSON.parse(data); if (j.error) msg = j.error.message; } catch (e) {}
+            const err = new Error(`OpenAI ${res.statusCode}: ${msg}`);
+            err.statusCode = res.statusCode;
+            reject(err);
+            return;
+          }
           try {
             const json = JSON.parse(data);
             if (json.error) reject(new Error(json.error.message));
@@ -116,9 +124,14 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return { statusCode: 500, body: JSON.stringify({ error: "OPENAI_API_KEY not set" }) };
+  // Trim keys + fall back from OPENAI_API_KEY to ALT_OPENAI_KEY on auth errors
+  // (a corrupted OPENAI_API_KEY was causing 401s).
+  const _keys = [];
+  for (const k of [process.env.OPENAI_API_KEY, process.env.ALT_OPENAI_KEY]) {
+    if (k && k.trim() && _keys.indexOf(k.trim()) === -1) _keys.push(k.trim());
+  }
+  if (!_keys.length) {
+    return { statusCode: 500, body: JSON.stringify({ error: "No OpenAI API key set (OPENAI_API_KEY / ALT_OPENAI_KEY)" }) };
   }
 
   let body;
@@ -138,7 +151,18 @@ exports.handler = async (event) => {
   ).join("\n\n");
 
   try {
-    const result = await callOpenAI(apiKey, withLanguage(GRAMMAR_SYSTEM, language), questionBlocks);
+    let result, lastErr;
+    for (const key of _keys) {
+      try {
+        result = await callOpenAI(key, withLanguage(GRAMMAR_SYSTEM, language), questionBlocks);
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        if (e.statusCode !== 401 && e.statusCode !== 403) break;
+      }
+    }
+    if (lastErr) throw lastErr;
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },

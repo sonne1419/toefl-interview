@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0026",
+  "set_name": "Sports",
   "order": 29,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 101,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "From what you've seen, what do sports fans around you typically do when they want to follow their favorite teams, such as attending games, streaming matches, or watching highlights?",
       "audio": "practice/audio/SET-0026/SET-0026_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 102,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see. When choosing how to watch an important game, is the exciting atmosphere or personal convenience more important? Why?",
       "audio": "practice/audio/SET-0026/SET-0026_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 103,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "helpful or harmful to sports fans"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 104,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "online streaming become the main way fans watch professional sports in the future"
       ],

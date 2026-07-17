@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0016",
+  "set_name": "Social Media",
   "order": 19,
   "interviewer_gender": "af",
   "interviewer_image": "assets/af.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 61,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What kinds of social-media content are popular among people your age? For example, consider personal photos, short videos, news updates, or other content. Why is this content popular?",
       "audio": "practice/audio/SET-0016/SET-0016_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 62,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWhen you want to keep in touch with friends, do you prefer sending messages online or talking with them face to face? Why?",
       "audio": "practice/audio/SET-0016/SET-0016_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 63,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "more people use stricter privacy rules before posting photos or personal updates in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 64,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "building trust"
       ],

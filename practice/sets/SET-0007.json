@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0007",
+  "set_name": "Exercise",
   "order": 10,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 25,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "When you exercise regularly, do you prefer following the same routine each time or doing different activities? Why?",
       "audio": "practice/audio/SET-0007/SET-0007_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 26,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "I see.\nWhat kinds of short or convenient physical activities do people in your community like to fit into a busy day? Give some examples or categories.",
       "audio": "practice/audio/SET-0007/SET-0007_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 27,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "encourage people to take short exercise breaks in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 28,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "maintaining good mental health"
       ],

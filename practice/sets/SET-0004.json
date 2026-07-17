@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0004",
+  "set_name": "News & Current Events",
   "order": 7,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 13,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What kinds of news stories are most likely to influence people's decisions? For example, consider stories about health, education, or local events. Why do these stories have an influence?",
       "audio": "practice/audio/SET-0004/SET-0004_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 14,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWhen you want to learn about current events, do you prefer brief news summaries or in-depth reports? Why?",
       "audio": "practice/audio/SET-0004/SET-0004_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 15,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "more schools encourage students to discuss current events in class in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 16,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "making good decisions"
       ],

@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0010",
+  "set_name": "Working with Others",
   "order": 13,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 37,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What kinds of group activities do people at your school or workplace generally take part in? For example, do they work on projects, join clubs, volunteer, or participate in other activities?",
       "audio": "practice/audio/SET-0010/SET-0010_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 38,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWhen you work with other people, do you prefer having clearly assigned roles or deciding responsibilities together as the work progresses? Why?",
       "audio": "practice/audio/SET-0010/SET-0010_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 39,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "popularity increase in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 40,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "building strong relationships"
       ],

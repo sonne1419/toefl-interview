@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0020",
+  "set_name": "Community Service",
   "order": 23,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 77,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "What do people in your community typically do to help others? Give some examples.",
       "audio": "practice/audio/SET-0020/SET-0020_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 78,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see. When you take part in a volunteer project, do you prefer helping people directly or completing behind-the-scenes tasks, such as organizing materials or sharing information? Why?",
       "audio": "practice/audio/SET-0020/SET-0020_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 79,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "donating time is more beneficial than donating money"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 80,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "using social media a good way to organize a community service project"
       ],

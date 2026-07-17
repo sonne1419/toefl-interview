@@ -80,6 +80,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 105,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "Thank you for speaking with me today. Now, I’d like you to think back to the last time you visited another city in your country. A city that you didn't live in. Why did you travel to that city? What did you like about that city?",
       "audio": "practice/audio/test01/test01_q001.mp3",
@@ -104,6 +106,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 106,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Great. Cities affect people in different ways. Some people find cities dynamic and exciting. Others find that cities are overwhelming and drain them of energy. What kind of reaction do you have to cities? Why do you think you react in this way?",
       "audio": "practice/audio/test01/test01_q002.mp3",
@@ -128,6 +132,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 107,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "lead more interesting lives"
       ],
@@ -154,6 +160,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 108,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "promote a general sense of happiness and life satisfaction"
       ],

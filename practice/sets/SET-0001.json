@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0001",
+  "set_name": "Studying & Learning",
   "order": 4,
   "interviewer_gender": "af",
   "interviewer_image": "assets/af.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 1,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What kinds of study tools or resources do students at your school typically use? For example, do they use textbooks, flash cards, or practice websites?",
       "audio": "practice/audio/SET-0001/SET-0001_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 2,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWhen you are learning a difficult subject, do you prefer to ask for help as soon as you feel confused or try to figure it out by yourself first? Why?",
       "audio": "practice/audio/SET-0001/SET-0001_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 3,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "more popular in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 4,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "a lifelong love of learning"
       ],

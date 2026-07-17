@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0003",
+  "set_name": "Travel",
   "order": 6,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 9,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Have your family members or friends ever taken a short trip close to home instead of traveling far away? For example, have they visited a nearby town, beach, or park? Why or why not?",
       "audio": "practice/audio/SET-0003/SET-0003_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 10,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWhen you travel, do you prefer to spend more time exploring one place or visit several places during the same trip? Why?",
       "audio": "practice/audio/SET-0003/SET-0003_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 11,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "join small-group tours led by local residents in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 12,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "relax and recharge"
       ],

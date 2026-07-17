@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0021",
+  "set_name": "Workplace & Teamwork",
   "order": 24,
   "interviewer_gender": "af",
   "interviewer_image": "assets/af.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 81,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "For a school or workplace group project, would you prefer communicating through email, group messaging, or face-to-face meetings? Why?",
       "audio": "practice/audio/SET-0021/SET-0021_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 82,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Interesting. Do new employees need regular feedback from a manager, or should they be given more time to solve problems independently? Why?",
       "audio": "practice/audio/SET-0021/SET-0021_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 83,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "open-plan offices improve communication",
         "make it harder for employees to concentrate"
@@ -155,6 +162,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 84,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "shorter workweeks become more common"
       ],

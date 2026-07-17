@@ -61,9 +61,7 @@
         <option value="">-- Select stage --</option>
         <option value="0">Stage 0 — Learn from Samples</option>
         <option value="1">Statement &amp; Reason (10s)</option>
-        <option value="2">Before Example (15s)</option>
-        <option value="3">After Example (20s)</option>
-        <option value="4">Full Answer</option>
+        <option value="4">Full Answer (45s)</option>
         <option value="5">Exam Mode</option>
       </select>
     </div>
@@ -77,6 +75,35 @@
 
     <div id="start-status" class="status-line"></div>
     <button id="btn-start-session" class="btn-primary" disabled>Start Session →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: BROWSE (test picker + question list)
+═══════════════════════════════════════ -->
+<div id="screen-browse" class="screen hidden">
+  <div id="browse-topbar">
+    <div id="browse-topbar-left">
+      <span id="browse-brand">Speaking Practice</span>
+      <select id="browse-test-select" title="Choose a test"></select>
+      <label id="browse-whq-wrap" title="Show only WH-Q questions">
+        <input type="checkbox" id="browse-whq-only"> WH-Q only
+      </label>
+    </div>
+    <div id="browse-topbar-right">
+      <button id="btn-end-session-browse" class="btn-end">End Session</button>
+    </div>
+  </div>
+
+  <div id="browse-layout">
+    <div id="browse-sidebar">
+      <input type="text" id="browse-search" placeholder="🔍 Search question text..." autocomplete="off">
+      <div id="browse-sidebar-heading">Questions</div>
+      <div id="browse-list"></div>
+    </div>
+    <div id="browse-content">
+      <div id="browse-hint">Select a question from the list to begin practicing.</div>
+    </div>
   </div>
 </div>
 
@@ -273,6 +300,7 @@
   <div id="interview-header">
     <div id="interview-header-left">
       <span id="interview-section-label">Speaking Practice</span>
+      <select id="interview-test-select" title="Choose a test"></select>
       <span id="interview-question-label"></span>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
@@ -280,6 +308,9 @@
       <button id="btn-end-session" class="btn-end">End Session</button>
     </div>
   </div>
+
+  <!-- Question tabs (Q1 · Q2 · Q3 · Q4) -->
+  <div id="interview-qtabs"></div>
 
   <!-- Stage intro collapsible -->
   <div id="stage-intro-box" style="background:#f0f9f8;border-bottom:1px solid #b2dbd8;overflow:hidden;">
@@ -351,6 +382,56 @@
           <div id="practice-stage-instruction"></div>
         </div>
         <div id="practice-reason-list"></div>
+
+        <!-- ═══ IDEA FRAME (💡 Help me with ideas) ═══ -->
+        <div id="idea-frame-wrap" style="margin-top:14px;border-top:1px dashed #cfe6e4;padding-top:12px;">
+          <div id="idea-frame-heading"
+            style="font-size:13px;font-weight:700;color:#8e44ad;margin-bottom:8px;white-space:nowrap;" data-tr="💡 Help me with ideas">💡 Help me with ideas</div>
+
+          <div id="idea-frame-controls" style="margin-top:10px;padding:12px;border:1px solid #e0cdf0;border-radius:10px;background:#faf5fc;">
+            <div style="font-size:13px;color:#c0392b;font-weight:700;margin-bottom:6px;" data-tr="When you need ideas, select a reason from the list or ask the system to choose a reason for you to see an idea structure that you can use.">When you need ideas, select a reason from the list or ask the system to choose a reason for you to see an idea structure that you can use.</div>
+            <select id="idea-reason-select"
+              style="width:100%;max-width:520px;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px;">
+              <option value="">— Select a reason —</option>
+              <option value="Make friends / build relationships">Make friends / build relationships</option>
+              <option value="Improve or maintain relationships (family, friends, customers, citizens)">Improve or maintain relationships (family, friends, customers, citizens)</option>
+              <option value="Image / reputation">Image / reputation</option>
+              <option value="Learn or work more efficiently">Learn or work more efficiently</option>
+              <option value="Solve problems or make decisions efficiently">Solve problems or make decisions efficiently</option>
+              <option value="Better physical and mental health">Better physical and mental health</option>
+              <option value="Feel less stressed or feel more energized">Feel less stressed or feel more energized</option>
+              <option value="__auto__">Choose a reason for me</option>
+            </select>
+            <div style="font-size:11.5px;color:#8e44ad;margin-top:6px;line-height:1.5;" data-tr="Not all reasons fit every question. If the logic isn't convincing, try a different reason or &quot;Choose a reason for me&quot;.">Not all reasons fit every question. If the logic isn't convincing, try a different reason or "Choose a reason for me".</div>
+            <div style="margin-top:10px;">
+              <button id="btn-idea-fill" type="button" class="btn-primary"
+                style="width:auto;padding:7px 16px;font-size:13px;" data-tr="Give me an idea frame">Give me an idea frame</button>
+              <span id="idea-status" style="font-size:12px;color:#888;margin-left:10px;"></span>
+            </div>
+
+            <!-- The generated three-block frame -->
+            <div id="idea-frame-output" style="display:none;margin-top:12px;">
+              <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <tbody>
+                  <tr>
+                    <td style="width:130px;vertical-align:top;padding:8px 10px;font-weight:700;color:#00736b;border-top:1px solid #e6d6f2;" data-tr="Statement & Reason">Statement &amp; Reason</td>
+                    <td id="idea-block-1" style="padding:8px 10px;line-height:1.6;color:#1a1a1a;border-top:1px solid #e6d6f2;"></td>
+                  </tr>
+                  <tr>
+                    <td style="vertical-align:top;padding:8px 10px;font-weight:700;color:#00736b;border-top:1px solid #e6d6f2;" data-tr="Before Example">Before Example</td>
+                    <td id="idea-block-2" style="padding:8px 10px;line-height:1.6;color:#1a1a1a;border-top:1px solid #e6d6f2;"></td>
+                  </tr>
+                  <tr>
+                    <td style="vertical-align:top;padding:8px 10px;font-weight:700;color:#00736b;border-top:1px solid #e6d6f2;" data-tr="After Example">After Example</td>
+                    <td id="idea-block-3" style="padding:8px 10px;line-height:1.6;color:#1a1a1a;border-top:1px solid #e6d6f2;"></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div style="font-size:11.5px;color:#8e44ad;margin-top:8px;line-height:1.5;" data-tr="💡 All three are short idea spines (keywords linked by →) — expand each one into your own spoken sentences.">💡 All three are short idea spines (keywords linked by →) — expand each one into your own spoken sentences.</div>
+            </div>
+          </div>
+        </div>
+        <!-- ═══ /IDEA FRAME ═══ -->
       </div>
 
     </div>
@@ -395,7 +476,6 @@
     <div class="card-badge">Set Complete</div>
     <h1 id="set-complete-title"></h1>
     <p id="set-complete-desc" class="card-desc"></p>
-    <button id="btn-continue-practice" class="btn-primary">Practice Another Test →</button>
     <button id="btn-end-session-complete" class="btn-secondary">End Session &amp; Download</button>
   </div>
 </div>
@@ -431,6 +511,175 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- ═══ IDEA FRAME LOGIC — same spine style as the Academic Discussion writing tool ═══ -->
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // Parse the three labelled blocks exactly like the writing tool does.
+  function parseSpineSections(text) {
+    var out = { statement: "", before: "", after: "" };
+    // Strip markdown emphasis so **LABEL:** still matches.
+    var clean = String(text || "").replace(/\*\*/g, "").replace(/__/g, "");
+    // "STATEMENT & REASON" may come back as "STATEMENT AND REASON"; allow both.
+    var STMT = "STATEMENT\\s*(?:&|and)\\s*REASON";
+    var BEF  = "BEFORE\\s*EXAMPLE";
+    var AFT  = "AFTER\\s*EXAMPLE";
+    var STOP = "(?:" + STMT + "|" + BEF + "|" + AFT + ")\\s*:";
+    function grab(label) {
+      var re = new RegExp(label + "\\s*:?\\s*([\\s\\S]*?)(?=\\n\\s*" + STOP + "|$)", "i");
+      var m = clean.match(re);
+      return m ? m[1].trim() : "";
+    }
+    out.statement = grab(STMT);
+    out.before    = grab(BEF);
+    out.after     = grab(AFT);
+    return out;
+  }
+
+  // ── Local cache so the same question+reason never re-hits the API ──
+  // Bump this whenever the idea prompt/format changes so old cached answers are dropped.
+  var IDEA_CACHE_VERSION = "v18";
+  var IDEA_CACHE_PREFIX  = "idea_spine_";              // shared prefix across all versions
+  var IDEA_CACHE_NS      = IDEA_CACHE_PREFIX + IDEA_CACHE_VERSION + "::";
+  var IDEA_CACHE_MEM = {}; // in-memory fallback if localStorage is unavailable
+
+  // One-time cleanup: remove any cached ideas from OLD versions so stale
+  // (e.g. reason-only "This is because…") answers can never be served again.
+  (function purgeOldIdeaCache() {
+    try {
+      var kill = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key && key.indexOf(IDEA_CACHE_PREFIX) === 0 && key.indexOf(IDEA_CACHE_NS) !== 0) {
+          kill.push(key);
+        }
+      }
+      kill.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    } catch (e) {}
+  })();
+
+  function ideaCacheKey(reason) {
+    var id = "";
+    try {
+      var q = (typeof STATE !== "undefined" && STATE) ? STATE.currentQuestion : null;
+      if (q) id = q.question_id || "";
+      if (!id && q && q.q) {
+        // Fallback: cheap stable hash of the question text.
+        var s = q.q, hHash = 0, i;
+        for (i = 0; i < s.length; i++) { hHash = ((hHash << 5) - hHash + s.charCodeAt(i)) | 0; }
+        id = "h" + (hHash >>> 0);
+      }
+    } catch (e) {}
+    return IDEA_CACHE_NS + id + "::" + reason;
+  }
+  function ideaCacheGet(reason) {
+    var k = ideaCacheKey(reason);
+    try { var v = localStorage.getItem(k); if (v !== null) return v; } catch (e) {}
+    return (k in IDEA_CACHE_MEM) ? IDEA_CACHE_MEM[k] : null;
+  }
+  function ideaCacheSet(reason, answer) {
+    var k = ideaCacheKey(reason);
+    IDEA_CACHE_MEM[k] = answer;
+    try { localStorage.setItem(k, answer); } catch (e) {}
+  }
+
+  function showFrame(frame) {
+    var stmt = (frame.statement || "—").replace(/,\s*because\b/gi, " because");
+    if ($("idea-block-1")) $("idea-block-1").textContent = stmt;
+    if ($("idea-block-2")) $("idea-block-2").textContent = frame.before || "—";
+    if ($("idea-block-3")) $("idea-block-3").textContent = frame.after || "—";
+    if ($("idea-frame-output")) $("idea-frame-output").style.display = "";
+  }
+
+  // Pull the live question text so the generated idea is on-topic.
+  function currentQuestionText() {
+    try {
+      var q = (typeof STATE !== "undefined" && STATE) ? STATE.currentQuestion : null;
+      return q ? (q.q || "") : "";
+    } catch (e) { return ""; }
+  }
+
+  // Full meta for the live question: type + any required highlighted phrases.
+  function currentQuestionMeta() {
+    try {
+      var q = (typeof STATE !== "undefined" && STATE) ? STATE.currentQuestion : null;
+      if (!q) return { question_type: "free", opening_type: "open", highlight_phrases: [] };
+      return {
+        question_type: q.question_type || "free",
+        opening_type: q.opening_type || "open",
+        highlight_phrases: Array.isArray(q.highlight_phrases) ? q.highlight_phrases : []
+      };
+    } catch (e) { return { question_type: "free", opening_type: "open", highlight_phrases: [] }; }
+  }
+
+  // The idea panel is always visible now (no toggle button). Translate its
+  // static labels once on load.
+  var openBtn = $("btn-idea-open");
+  if (openBtn) openBtn.addEventListener("click", function () {
+    var c = $("idea-frame-controls");
+    if (!c) return;
+    var opening = (c.style.display === "none" || !c.style.display);
+    c.style.display = opening ? "" : "none";
+    if (opening) {
+      var out = $("idea-frame-output"); if (out) out.style.display = "none";
+      var st = $("idea-status"); if (st) st.textContent = "";
+      try { if (typeof translateStaticEls === "function") translateStaticEls("#idea-frame-wrap"); } catch (e) {}
+    }
+  });
+  // Since the panel is shown by default, translate its labels now.
+  try { if (typeof translateStaticEls === "function") translateStaticEls("#idea-frame-wrap"); } catch (e) {}
+
+  // Build the frame via the SAME backend + mode the writing tool uses.
+  var fillBtn = $("btn-idea-fill");
+  if (fillBtn) fillBtn.addEventListener("click", async function () {
+    var sel = $("idea-reason-select");
+    var status = $("idea-status");
+    if (!sel || !sel.value) { if (status) status.textContent = "Please pick a reason first."; return; }
+
+    var reason = sel.value;
+    if (reason === "__auto__") reason = "AUTO";
+
+    var question = currentQuestionText();
+    if (!question) { if (status) status.textContent = "Open a question first, then try again."; return; }
+    var meta = currentQuestionMeta();
+
+    // Cache hit — no API call.
+    var cached = ideaCacheGet(reason);
+    if (cached) {
+      showFrame(parseSpineSections(cached));
+      if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
+      return;
+    }
+
+    fillBtn.disabled = true;
+    if (status) status.textContent = "Getting ideas…";
+    try {
+      var res = await fetch("/.netlify/functions/generate-speaking-idea", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: question,
+          reason: reason,
+          question_type: meta.question_type,
+          opening_type: meta.opening_type,
+          highlight_phrases: meta.highlight_phrases
+        })
+      });
+      var d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Failed");
+      var parts = parseSpineSections(d.answer || "");
+      if (!parts.statement && !parts.before && !parts.after) throw new Error("Empty");
+      ideaCacheSet(reason, d.answer || "");
+      showFrame(parts);
+      if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
+    } catch (e) {
+      if (status) status.textContent = "Could not get ideas. Please try again.";
+    }
+    fillBtn.disabled = false;
+  });
+})();
+</script>
 <script src="script.js"></script>
 </body>
 </html>

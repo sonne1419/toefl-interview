@@ -80,6 +80,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 113,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I’d like to ask you some questions about environmental protection. First, what do people in your country usually do to protect the environment in their daily lives? For example, do they recycle, reduce plastic use, save electricity, or use public transportation? Why do you think they choose those actions?",
       "audio": "practice/audio/test03/test03_q001.mp3",
@@ -104,6 +106,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 114,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Thank you. In your daily life, do you prefer to reduce waste by reusing items or by recycling them? Why?",
       "audio": "practice/audio/test03/test03_q002.mp3",
@@ -128,6 +132,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 115,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "more important in the future"
       ],
@@ -154,6 +160,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 116,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "effective",
         "necessary"

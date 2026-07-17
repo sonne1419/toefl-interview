@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0017",
+  "set_name": "Local Communities",
   "order": 20,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 65,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "Share one or two things you do to feel comfortable and connected in the place where you live.",
       "audio": "practice/audio/SET-0017/SET-0017_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 66,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWould a community program that offers free weekend activities affect your interest in choosing an area as a place to live, study, or work? Why or why not?",
       "audio": "practice/audio/SET-0017/SET-0017_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 67,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "a good strategy"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 68,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "people's priorities when choosing a neighborhood change in the future"
       ],

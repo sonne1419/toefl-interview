@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0014",
+  "set_name": "Personal Finance",
   "order": 17,
   "interviewer_gender": "af",
   "interviewer_image": "assets/af.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 53,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Do you prefer saving money for one specific goal or keeping it available for unexpected needs? Why?",
       "audio": "practice/audio/SET-0014/SET-0014_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 54,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "I see.\nIf you were helping a friend avoid overspending, what methods would you recommend? Please include examples.",
       "audio": "practice/audio/SET-0014/SET-0014_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 55,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "basic money-management lessons be taught in schools"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 56,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "a good quality of life"
       ],

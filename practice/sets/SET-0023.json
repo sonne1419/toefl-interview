@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0023",
+  "set_name": "Personal Growth",
   "order": 26,
   "interviewer_gender": "af",
   "interviewer_image": "assets/af.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 89,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What kinds of personal qualities do people around you usually admire in others, such as confidence, patience, honesty, or a good sense of humor?",
       "audio": "practice/audio/SET-0023/SET-0023_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 90,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see. When you want to improve at something, do you make a plan, ask someone for advice, or learn from people you respect? Why?",
       "audio": "practice/audio/SET-0023/SET-0023_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 91,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "successfully change an important habit without help from others"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 92,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "reflecting on past experiences an important way to stay aware of your strengths and weaknesses"
       ],

@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0025",
+  "set_name": "Higher Education",
   "order": 28,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 97,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What can help first-year university students adjust to academic work? For example, can study groups, introductory courses, or advice from teachers help them? Explain.",
       "audio": "practice/audio/SET-0025/SET-0025_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 98,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see. When choosing courses in the first year, would it be more important to you to build practical skills or to explore subjects you find interesting? Why?",
       "audio": "practice/audio/SET-0025/SET-0025_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 99,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "this break is generally helpful or harmful"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 100,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "universities offer more flexible study options in the future"
       ],

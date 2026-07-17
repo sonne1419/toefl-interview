@@ -80,6 +80,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 109,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Thank you for joining the study. Today, I'd like to ask you some questions about your commuting habits. First, is it important to live close to your school or work? Why?",
       "audio": "practice/audio/test02/test02_q001.mp3",
@@ -104,6 +106,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 110,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Imagine that you could choose to commute by car, which is faster but more expensive, or by public transportation, which is slower but less expensive. Which would you choose, and why?",
       "audio": "practice/audio/test02/test02_q002.mp3",
@@ -128,6 +132,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 111,
+      "opening_type": "wh_q",
       "highlight_phrases": [
         "more enjoyable"
       ],
@@ -154,6 +160,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 112,
+      "opening_type": "wh_q",
       "highlight_phrases": [
         "affect businesses in positive ways and negative ways"
       ],

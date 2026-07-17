@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0019",
+  "set_name": "Managing Assignments",
   "order": 22,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 73,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "What do students at your school typically do when they have several assignments due in the same week? Give some examples.",
       "audio": "practice/audio/SET-0019/SET-0019_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 74,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see. When you prepare for an important assignment, do you prefer to make a detailed plan at the beginning or work more flexibly as you go? Why?",
       "audio": "practice/audio/SET-0019/SET-0019_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 75,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "starting with the most difficult assignment is more beneficial"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 76,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "using a calendar app a good way to keep track of school deadlines"
       ],

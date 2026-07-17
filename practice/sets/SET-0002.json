@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0002",
+  "set_name": "Children & Activities",
   "order": 5,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 5,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What kinds of after-school activities do children in your community generally like? For example, do they prefer sports, music, or other activities?",
       "audio": "practice/audio/SET-0002/SET-0002_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 6,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWhen you spend time with a younger child, do you prefer to teach the child something useful or just play and relax together? Why?",
       "audio": "practice/audio/SET-0002/SET-0002_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 7,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "popularity increase in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 8,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "building children's confidence"
       ],

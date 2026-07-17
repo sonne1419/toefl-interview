@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0015",
+  "set_name": "Education",
   "order": 18,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 57,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What do students at schools in your community typically do to prepare for important assignments? For example, do they make schedules, collect information, discuss ideas, or use other methods?",
       "audio": "practice/audio/SET-0015/SET-0015_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 58,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWhen you receive feedback on an assignment, do you prefer written comments or a conversation with the teacher? Why?",
       "audio": "practice/audio/SET-0015/SET-0015_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 59,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "more schools use this approach in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 60,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "succeeding academically"
       ],

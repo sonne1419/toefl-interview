@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0005",
+  "set_name": "Communication",
   "order": 8,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 17,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What kinds of situations require clear communication in your class or workplace? For example, do people need it when dividing tasks, giving feedback, or making decisions?",
       "audio": "practice/audio/SET-0005/SET-0005_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 18,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWhen someone gives you feedback, do you prefer the person to be very direct or to explain the feedback more gently? Why?",
       "audio": "practice/audio/SET-0005/SET-0005_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 19,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "clarify each person's responsibilities",
         "create a detailed schedule"
@@ -155,6 +162,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 20,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "clear communication is especially important for building trust in a team"
       ],

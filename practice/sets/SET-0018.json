@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0018",
+  "set_name": "Food & Eating Habits",
   "order": 21,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 69,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "What are one or two practical ways a busy student or worker can plan meals during the week?",
       "audio": "practice/audio/SET-0018/SET-0018_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 70,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nWould a university or workplace program that provides affordable meals with several menu choices affect your interest in choosing that school or company? Why or why not?",
       "audio": "practice/audio/SET-0018/SET-0018_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 71,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "a good strategy"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 72,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "people's attitudes toward convenient food change in the future"
       ],

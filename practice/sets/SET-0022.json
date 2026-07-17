@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0022",
+  "set_name": "Reading & Study Resources",
   "order": 25,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 85,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "When you need information for school or personal interest, do you prefer using printed materials or online resources? Why?",
       "audio": "practice/audio/SET-0022/SET-0022_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 86,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Interesting. When you need a place to read or study, do you prefer staying at home or going to a shared place, such as a library, café, or study center? Why?",
       "audio": "practice/audio/SET-0022/SET-0022_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 87,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "most useful to young adults"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 88,
+      "opening_type": "wh_q",
       "highlight_phrases": [
         "physical libraries",
         "in the future"

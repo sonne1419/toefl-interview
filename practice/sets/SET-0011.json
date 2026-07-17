@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0011",
+  "set_name": "Helping Others",
   "order": 14,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 41,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "When someone you know seems to be having a problem, do you prefer to offer help right away or wait until the person asks for help? Why?",
       "audio": "practice/audio/SET-0011/SET-0011_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 42,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nIs it better to help someone by giving practical assistance or by listening and offering emotional support? Why?",
       "audio": "practice/audio/SET-0011/SET-0011_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 43,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "necessary to have experienced a problem personally"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 44,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "becoming a caring person"
       ],

@@ -10,13 +10,13 @@ const PRACTICE_REASONS = {
 
 const STAGE_META = {
   1: { title: "Statement & Reason",  instruction: "Say your answer and one reason.",
-       intro: "Read the question and focus on just the first two sentences of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues. Transcript and analysis will be shown after Q4." },
+       intro: "1. Pick a test from the dropdown menu to begin.\n2. Read the question and focus on just the first two sentences of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues.\n3. When you need ideas, select a reason from the list or ask the system to try to answer the statement and reason.\n4. After you finish a test, pick another test or press End Session to see your transcript and analysis." },
   2: { title: "Before Example",      instruction: "Practice the before/past example block.",
-       intro: "Read the question and focus on just the Before Example part of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues. Transcript and analysis will be shown after Q4." },
+       intro: "Read the question and focus on just the Before Example part of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
   3: { title: "After Example",       instruction: "Practice the after/current result block.",
-       intro: "Read the question and focus on just the After Example part of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues. Transcript and analysis will be shown after Q4." },
+       intro: "Read the question and focus on just the After Example part of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
   4: { title: "Full Answer",         instruction: "Use the short cues to speak the full answer.",
-       intro: "Read the question and focus on the full answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues. Transcript and analysis will be shown after Q4." },
+       intro: "1. Pick a test from the dropdown menu to begin.\n2. Read the question and focus on your full answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues.\n3. When you need ideas, select a reason from the list or ask the system to choose a reason for you to see an idea structure that you can use.\n4. After you finish a test, pick another test or press End Session to see your transcript and analysis." },
   5: { title: "Exam Mode",           instruction: "Exam mode — no cues.",
        intro: "" }
 };
@@ -33,14 +33,20 @@ const STATE = {
   micWarmedUp:      false,
   selectedStage:    null,
   testIndex:        [],
+  allSets:          [],   // all sets loaded upfront (for browse sidebar + search)
   currentQuestion:  null,
   currentTask:      null,
   _timerResolve:    null,
   _endCalled:       false,
   _audioResolve:    null,   // resolve handle to abort audio early
+  _audioPlayTimer:  null,   // pending delayed play() timer (cancel on stop)
   _recordResolve:   null,   // resolve handle for record button press
   _saveResolve:     null,   // resolve handle for save/re-record wait
-  _questionActive:  false   // true while a question is running
+  _questionActive:  false,  // true while a question is running
+  _restartRequested: false, // signal the practice loop to bail for a test/question switch
+  _setCompleteTimer: null,  // timer for auto-return to picker after a set completes
+  _loginWarmupStarted: false, // guard: mic warmup kicked off after login
+  _browseWarmupStarted: false // guard: fallback warmup on practice entry
 };
 
 // ═══════════════════════════════════════════════════
@@ -49,6 +55,453 @@ const STATE = {
 
 function $(id) { return document.getElementById(id); }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Build the small pattern hint for a question, e.g. "(WH-Q + required ending)".
+// Reads opening_type (wh_q / pick_1_of_2; legacy open / pick1) and
+// question_type (required_wording / free).
+function questionHintLabel(q) {
+  if (!q) return "";
+  var o = (q.opening_type || "").toString();
+  var opening = (o === "wh_q" || o === "open") ? "WH-Q" : "Pick 1 of 2";
+  var ending = (q.question_type === "required_wording") ? "required ending" : "free ending";
+  return "(" + opening + " + " + ending + ")";
+}
+
+// Render the question-list sidebar for the current task.
+// currentIndex is 1-based (matches STATE.currentQuestionIndex); 0 = none yet.
+function renderQuestionSidebar(task, currentIndex) {
+  var wrap = $("interview-qlist-items");
+  if (!wrap) return;
+  var questions = (task && task.questions) || [];
+  wrap.innerHTML = "";
+  questions.forEach(function (q, i) {
+    var n = i + 1;
+    var item = document.createElement("div");
+    item.className = "qlist-item";
+    if (n === currentIndex) item.classList.add("is-current");
+    else if (currentIndex && n < currentIndex) item.classList.add("is-done");
+    var no = document.createElement("div");
+    no.className = "qlist-qno";
+    no.textContent = "Q" + n;
+    var hint = document.createElement("div");
+    hint.className = "qlist-hint";
+    hint.textContent = questionHintLabel(q);
+    item.appendChild(no);
+    item.appendChild(hint);
+    wrap.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// INTERVIEW: test dropdown + question tabs
+// ═══════════════════════════════════════════════════
+function buildWhqSequence() {
+  var out = [];
+  browseRealSets().forEach(function (set) {
+    (set.questions || []).forEach(function (q) {
+      var o = (q.opening_type || "");
+      if (o === "wh_q" || o === "open") {
+        var qq = Object.assign({}, q);
+        qq._sourceSetId = set.set_id;
+        qq._sourceSetName = set.set_name || set.set_id;
+        out.push(qq);
+      }
+    });
+  });
+  return out;
+}
+
+function makeWhqTask() {
+  var qs = buildWhqSequence();
+  var base = browseRealSets()[0] || {};
+  return {
+    set_id: "WHQ",
+    set_name: "WH-Q only (" + qs.length + ")",
+    _isWhq: true,
+    interviewer_gender: base.interviewer_gender || "af",
+    interviewer_image: base.interviewer_image,
+    questions: qs,
+    areas: base.areas,
+    reasons: base.reasons,
+    stage_meta: base.stage_meta
+  };
+}
+
+function populateInterviewDropdown() {
+  var sel = $("interview-test-select");
+  if (!sel) return;
+  var sets = browseRealSets();
+  sel.innerHTML = "";
+
+  var placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "— Select a test —";
+  sel.appendChild(placeholder);
+
+  var whqCount = buildWhqSequence().length;
+  var whqOpt = document.createElement("option");
+  whqOpt.value = "WHQ";
+  whqOpt.textContent = "WH-Q only (" + whqCount + ")";
+  sel.appendChild(whqOpt);
+
+  var divider = document.createElement("option");
+  divider.disabled = true;
+  divider.textContent = "──────────";
+  sel.appendChild(divider);
+
+  sets.forEach(function (set) {
+    var opt = document.createElement("option");
+    opt.value = set.set_id;
+    opt.textContent = set.set_name ? (set.set_id + " — " + set.set_name) : set.set_id;
+    sel.appendChild(opt);
+  });
+
+  var cur = STATE.currentTask;
+  sel.value = cur ? (cur._isWhq ? "WHQ" : cur.set_id) : "";
+}
+
+function renderQTabs(task, currentIndex) {
+  var wrap = $("interview-qtabs");
+  if (!wrap) return;
+  var questions = (task && task.questions) || [];
+  wrap.innerHTML = "";
+  questions.forEach(function (q, i) {
+    var tab = document.createElement("div");
+    tab.className = "qtab" + ((i + 1 === currentIndex) ? " is-current" : "");
+    var label = task._isWhq ? (q._sourceSetId || ("Q" + (i + 1))) : ("Q" + (i + 1));
+    tab.innerHTML = label + '<span class="qtab-hint">' + questionHintLabel(q) + "</span>";
+    tab.addEventListener("click", function () { jumpToQuestion(i); });
+    wrap.appendChild(tab);
+  });
+}
+
+function switchInterviewTest(value) {
+  var task;
+  if (value === "WHQ") {
+    task = makeWhqTask();
+  } else {
+    task = browseRealSets().find(function (s) { return s.set_id === value; });
+  }
+  if (!task) return;
+  STATE.currentTask = task;
+  STATE._startQIndex = 0;
+  // If practice hasn't warmed the mic yet, take the one-time warmup path.
+  if (!STATE.micWarmedUp) {
+    STATE._endCalled = false;
+    if (!STATE.recordings) STATE.recordings = [];
+    micPermissionState().then(function (perm) {
+      if (perm === "granted") { showScreen("screen-warmup"); runMicWarmup(); }
+      else { showScreen("screen-mic-instruction"); }
+    });
+    return;
+  }
+  restartPractice();
+}
+
+// Show the interview screen in "pick a test first" state: dropdown ready,
+// no test loaded, a prompt in the practice area.
+function showInterviewPicker() {
+  showScreen("screen-interview");
+  initInterviewControls();
+  populateInterviewDropdown();
+  var sel = $("interview-test-select");
+  if (sel) sel.value = "";
+  var tabs = $("interview-qtabs"); if (tabs) tabs.innerHTML = "";
+  var label = $("interview-question-label"); if (label) label.textContent = "";
+
+  // Show the stage intro (depends only on the stage, not the test).
+  var stage = STATE.selectedStage;
+  var introText = (STAGE_META[stage] ? STAGE_META[stage].intro : "") || "";
+  if ($("stage-intro-text")) translateUI(introText, $("stage-intro-text"), true);
+  if ($("stage-intro-bar-text"))
+    $("stage-intro-bar-text").textContent = "📋 About this stage — " + (STAGE_META[stage] ? STAGE_META[stage].title : "");
+  if ($("stage-intro-body")) $("stage-intro-body").style.display = "";
+
+  // Hide the interviewer image until a test is chosen (avoid broken-image icon).
+  var imgEl = $("interview-img");
+  if (imgEl) { imgEl.removeAttribute("src"); imgEl.style.display = "none"; }
+
+  // Hide the practice cards (question card + support card) so only the picker
+  // prompt shows. Force display:none so nothing can override it.
+  var card = $("practice-question-card");
+  if (card) { card.classList.add("hidden"); card.style.display = "none"; }
+  var supportCard = $("practice-support-card");
+  if (supportCard) { supportCard.classList.add("hidden"); supportCard.style.display = "none"; }
+  var ideaWrap = $("idea-frame-wrap");
+  if (ideaWrap) ideaWrap.style.display = "none";
+  // Hide record controls + timer so the picker state is clean.
+  var recBtn = $("btn-record"); if (recBtn) recBtn.classList.add("hidden");
+  var postRec = $("post-record-buttons"); if (postRec) postRec.classList.add("hidden");
+  var timerBox = $("response-timer-box"); if (timerBox) timerBox.classList.add("hidden");
+  var panel = $("interview-practice-panel");
+  if (panel) {
+    var msg = $("interview-pick-msg");
+    if (!msg) {
+      msg = document.createElement("div");
+      msg.id = "interview-pick-msg";
+      msg.style.cssText = "padding:40px 24px;text-align:center;color:#6b7280;font-size:15px;";
+      panel.insertBefore(msg, panel.firstChild);
+    }
+    msg.textContent = STATE._justCompletedSet
+      ? "After you finish a test, pick another test from the dropdown menu, or press End Session to see your transcript and analysis."
+      : "Pick a test from the dropdown menu to begin.";
+    msg.style.display = "";
+  }
+  STATE._justCompletedSet = false;
+}
+
+function jumpToQuestion(qIndex) {
+  STATE._startQIndex = qIndex || 0;
+  restartPractice();
+}
+
+function restartPractice() {
+  STATE._restartRequested = true;
+  stopAudio();
+  if (typeof abortTimer === "function") abortTimer();
+  if (STATE._recordResolve) { var r = STATE._recordResolve; STATE._recordResolve = null; r(); }
+  setTimeout(function () {
+    STATE._restartRequested = false;
+    STATE._endCalled = false;
+    startPractice();
+  }, 80);
+}
+
+function initInterviewControls() {
+  var sel = $("interview-test-select");
+  if (sel && !sel._wired) {
+    sel._wired = true;
+    sel.addEventListener("change", function () {
+      if (sel.value && sel.value !== "──────────") switchInterviewTest(sel.value);
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// BROWSE SCREEN (fusion: dropdown + sidebar + search)
+// ═══════════════════════════════════════════════════
+const BROWSE = { search: "", whqOnly: "", selectedSetId: "" };
+
+// Real sets only (exclude old placeholders like test01/02/03).
+function browseIsRealSet(s) {
+  return /^SET-/i.test(String(s.set_id || ""));
+}
+function browseRealSets() {
+  return STATE.allSets.filter(browseIsRealSet);
+}
+
+function browseMatchesQ(q) {
+  if (BROWSE.whqOnly) {
+    var o = (q.opening_type || "");
+    if (!(o === "wh_q" || o === "open")) return false;
+  }
+  var s = (BROWSE.search || "").trim().toLowerCase();
+  if (s && !String(q.q || "").toLowerCase().includes(s)) return false;
+  return true;
+}
+
+// Populate the top-bar test dropdown from STATE.allSets.
+function populateBrowseDropdown() {
+  var sel = $("browse-test-select");
+  if (!sel) return;
+  var prev = BROWSE.selectedSetId || "";
+  sel.innerHTML = "";
+  var allOpt = document.createElement("option");
+  allOpt.value = "";
+  var real = browseRealSets();
+  allOpt.textContent = "All tests (" + real.length + ")";
+  sel.appendChild(allOpt);
+  real.forEach(function (set) {
+    var opt = document.createElement("option");
+    opt.value = set.set_id || set._file;
+    var name = set.set_name || "";
+    opt.textContent = name ? (set.set_id + " — " + name) : set.set_id;
+    sel.appendChild(opt);
+  });
+  sel.value = prev;
+}
+
+// Render the sidebar list, grouped by set, applying search + WH-Q filters.
+function renderBrowseSidebar() {
+  var list = $("browse-list");
+  if (!list) return;
+  list.innerHTML = "";
+
+  var searching = (BROWSE.search || "").trim().length > 0;
+  var sets = browseRealSets();
+  // Active search spans ALL tests; the dropdown only narrows when NOT searching.
+  if (!searching && BROWSE.selectedSetId) {
+    sets = sets.filter(function (s) { return (s.set_id || s._file) === BROWSE.selectedSetId; });
+  }
+
+  var anyShown = false;
+  sets.forEach(function (set) {
+    var shown = (set.questions || []).filter(browseMatchesQ);
+    if (!shown.length) return;
+    anyShown = true;
+
+    var group = document.createElement("div");
+    group.className = "browse-set-group";
+    group.textContent = (set.set_name) ? (set.set_id + " — " + set.set_name) : set.set_id;
+    list.appendChild(group);
+
+    (set.questions || []).forEach(function (q, qi) {
+      if (!browseMatchesQ(q)) return;
+      var item = document.createElement("div");
+      item.className = "browse-q-item";
+      item.dataset.setId = set.set_id || set._file || "";
+      item.dataset.qIndex = qi;
+
+      var head = document.createElement("div");
+      head.innerHTML =
+        '<span class="browse-q-serial">' + (q.serial != null ? "#" + q.serial + "  " : "") + '</span>' +
+        '<span class="browse-q-no">Q' + (qi + 1) + '</span>';
+      var hint = document.createElement("div");
+      hint.className = "browse-q-hint";
+      hint.textContent = questionHintLabel(q);
+      var preview = document.createElement("div");
+      preview.className = "browse-q-preview";
+      preview.textContent = browseQPreview(q.q);
+
+      item.appendChild(head);
+      item.appendChild(hint);
+      item.appendChild(preview);
+      item.addEventListener("click", function () {
+        startPracticeFromBrowse(set, qi);
+      });
+      list.appendChild(item);
+    });
+  });
+
+  if (!anyShown) {
+    list.innerHTML = '<div style="padding:10px 8px;font-size:12px;color:#9ca3af">No questions match.</div>';
+  }
+}
+
+// Short preview of the question (strip interviewer lead-ins, trim length).
+function browseQPreview(text) {
+  var t = String(text || "").replace(/\s+/g, " ").trim();
+  t = t.replace(/^(I see\.|Interesting\.[^.]*\.|Interesting\.|Good points\.[^.]*\.|Good points\.|Thank you[^.]*\.|Alright\.|OK\.)\s*/i, "");
+  if (t.length > 90) t = t.slice(0, 90) + "…";
+  return t;
+}
+
+function refreshBrowse() {
+  populateBrowseDropdown();
+  renderBrowseSidebar();
+}
+
+function initBrowseControls() {
+  var search = $("browse-search");
+  if (search && !search._wired) {
+    search._wired = true;
+    search.addEventListener("input", function () {
+      BROWSE.search = search.value || "";
+      // Search is its own mode: clear the other filters.
+      if (BROWSE.search) {
+        BROWSE.whqOnly = "";
+        BROWSE.selectedSetId = "";
+        var whqEl = $("browse-whq-only"); if (whqEl) whqEl.checked = false;
+        var selEl = $("browse-test-select"); if (selEl) selEl.value = "";
+      }
+      renderBrowseSidebar();
+    });
+  }
+  var whq = $("browse-whq-only");
+  if (whq && !whq._wired) {
+    whq._wired = true;
+    whq.addEventListener("change", function () {
+      BROWSE.whqOnly = whq.checked ? "1" : "";
+      // WH-Q filter is its own mode: clear search + test filters.
+      if (BROWSE.whqOnly) {
+        BROWSE.search = "";
+        BROWSE.selectedSetId = "";
+        var sEl = $("browse-search"); if (sEl) sEl.value = "";
+        var selEl = $("browse-test-select"); if (selEl) selEl.value = "";
+      }
+      renderBrowseSidebar();
+    });
+  }
+  var sel = $("browse-test-select");
+  if (sel && !sel._wired) {
+    sel._wired = true;
+    sel.addEventListener("change", function () {
+      BROWSE.selectedSetId = sel.value || "";
+      // Test filter is its own mode: clear search + WH-Q.
+      if (BROWSE.selectedSetId) {
+        BROWSE.search = "";
+        BROWSE.whqOnly = "";
+        var sEl = $("browse-search"); if (sEl) sEl.value = "";
+        var whqEl = $("browse-whq-only"); if (whqEl) whqEl.checked = false;
+      }
+      renderBrowseSidebar();
+    });
+  }
+  var endBtn = $("btn-end-session-browse");
+  if (endBtn && !endBtn._wired) {
+    endBtn._wired = true;
+    endBtn.addEventListener("click", function () { triggerEndSession(); });
+  }
+}
+
+async function enterBrowseScreen() {
+  showScreen("screen-browse");
+  initBrowseControls();
+  var list = $("browse-list");
+  if (list) list.innerHTML = '<div style="padding:12px 8px;font-size:12px;color:#9ca3af">Loading tests…</div>';
+  await loadAllSets();
+  refreshBrowse();
+
+  // Warm up the mic once per session, in the background, so clicking a question
+  // goes straight into practice. Authorization (permission prompt) only appears
+  // the first time after login; the silent warmup runs each session.
+  if (!STATE.micWarmedUp && !STATE._browseWarmupStarted) {
+    STATE._browseWarmupStarted = true;
+    const perm = await micPermissionState();
+    if (perm === "granted") {
+      // Silent background warmup: request mic, do the 3s priming, no screen switch.
+      backgroundMicWarmup();
+    }
+    // If not granted, we defer to the first click (which shows the mic-instruction
+    // screen once); after that the session is warm.
+  }
+}
+
+// Silent warmup that does NOT switch screens (used from the browse screen).
+async function backgroundMicWarmup() {
+  try {
+    const ok = await ensureMic();
+    if (!ok) return;
+    await warmupAudioContext();
+    startRecording();
+    await sleep(3000);
+    await stopRecording();       // discard warmup blob
+    STATE.micWarmedUp = true;
+  } catch (e) { /* if it fails, the normal warmup path still runs on click */ }
+}
+
+// Start practicing a specific set at a specific question index (from the browse
+// list). Mic is usually already warm (from browse entry) -> go straight in.
+async function startPracticeFromBrowse(set, qIndex) {
+  STATE.currentTask   = set;
+  STATE._startQIndex  = qIndex || 0;
+  STATE._endCalled    = false;
+  if (STATE.micWarmedUp) {
+    startPractice();
+    return;
+  }
+  // Not warm yet (permission wasn't granted at browse entry): run the normal
+  // one-time path (instruction if needed, then warmup, then practice).
+  if (!STATE.recordings) STATE.recordings = [];
+  const perm = await micPermissionState();
+  if (perm === "granted") {
+    showScreen("screen-warmup");
+    runMicWarmup();
+  } else {
+    showScreen("screen-mic-instruction");
+  }
+}
+
 
 // Resolve the interviewer image. interviewer_image (e.g. "assets/af.webp") is
 // authoritative; if it's missing, fall back to a gendered PNG derived from the
@@ -344,6 +797,7 @@ function playAudioReliable(src) {
 
     function cleanup() {
       STATE._audioResolve = null;
+      if (STATE._audioPlayTimer) { clearTimeout(STATE._audioPlayTimer); STATE._audioPlayTimer = null; }
       audio.onended = null;
       audio.onerror = null;
       audio.oncanplaythrough = null;
@@ -353,7 +807,10 @@ function playAudioReliable(src) {
     audio.onended = cleanup;
     audio.onerror = cleanup;
     audio.oncanplaythrough = () => {
-      setTimeout(() => {
+      STATE._audioPlayTimer = setTimeout(() => {
+        STATE._audioPlayTimer = null;
+        // If playback was aborted (End Session), don't start playing.
+        if (STATE._audioResolve === null) return;
         audio.play().catch(() => cleanup());
       }, 800);
     };
@@ -363,6 +820,11 @@ function playAudioReliable(src) {
 
 function stopAudio() {
   const audio = $("question-audio-player");
+  // Cancel any pending delayed play() so audio can't restart after stop.
+  if (STATE._audioPlayTimer) { clearTimeout(STATE._audioPlayTimer); STATE._audioPlayTimer = null; }
+  audio.oncanplaythrough = null;
+  audio.onended = null;
+  audio.onerror = null;
   audio.pause();
   audio.currentTime = 0;   // rewind but keep the src so the bar stays replayable
   if (STATE._audioResolve) {
@@ -572,13 +1034,63 @@ async function loadTestIndex() {
 
   const sel = $("test-selector");
   sel.innerHTML = '<option value="">-- Select a test --</option>';
-  STATE.testIndex.forEach(t => {
+  STATE.testIndex.forEach((t, idx) => {
     const opt = document.createElement("option");
     opt.value = t.file;
     opt.dataset.dir = t.dir || "sets";
-    opt.textContent = t.label;
+    // Prefer a friendly set name if the index provides one; else use the label.
+    const name = t.set_name || t.name || t.label || t.file;
+    opt.textContent = name;
     sel.appendChild(opt);
   });
+}
+
+// Load EVERY set upfront (index + each full set) for the browse sidebar & search.
+// Reuses the existing list_sets + get_set endpoints. Cached in STATE.allSets.
+// Returns the array; safe to call more than once (fetches only once).
+let _allSetsPromise = null;
+async function loadAllSets() {
+  if (STATE.allSets && STATE.allSets.length) return STATE.allSets;
+  if (_allSetsPromise) return _allSetsPromise;
+
+  _allSetsPromise = (async () => {
+    const key = sessionStorage.getItem("access_key") || "";
+    // Ensure we have the index first.
+    if (!STATE.testIndex || !STATE.testIndex.length) {
+      try {
+        const res = await fetch(`/.netlify/functions/api?op=list_sets&key=${encodeURIComponent(key)}`);
+        if (res.ok) STATE.testIndex = await res.json();
+      } catch (e) { /* handled below */ }
+    }
+    const index = STATE.testIndex || [];
+
+    // Fetch each set's full JSON in parallel.
+    const results = await Promise.all(index.map(async (t) => {
+      try {
+        const dir = t.dir || "sets";
+        const res = await fetch(
+          `/.netlify/functions/api?op=get_set&file=${encodeURIComponent(t.file)}&dir=${encodeURIComponent(dir)}&key=${encodeURIComponent(key)}`
+        );
+        if (!res.ok) return null;
+        const set = await res.json();
+        set._file = t.file;
+        set._dir  = dir;
+        return set;
+      } catch (e) { return null; }
+    }));
+
+    STATE.allSets = results.filter(Boolean);
+    // Sort by numeric order if present, else by set_id.
+    STATE.allSets.sort((a, b) => {
+      const oa = (a.order != null) ? a.order : 9999;
+      const ob = (b.order != null) ? b.order : 9999;
+      if (oa !== ob) return oa - ob;
+      return String(a.set_id || "").localeCompare(String(b.set_id || ""));
+    });
+    return STATE.allSets;
+  })();
+
+  return _allSetsPromise;
 }
 
 function checkStartReady() {
@@ -591,10 +1103,14 @@ function checkStartReady() {
     // Stage 0 needs no test
     $("test-selector-group").style.display = "none";
     $("btn-start-session").disabled = false;
-  } else {
-    // Stages 1-4 need a test
+  } else if (stage === "5") {
+    // Exam mode still uses the start-screen test dropdown
     $("test-selector-group").style.display = "";
     $("btn-start-session").disabled = $("test-selector").value === "";
+  } else {
+    // Practice stages 1-4: test is chosen inside the browse screen now
+    $("test-selector-group").style.display = "none";
+    $("btn-start-session").disabled = false;
   }
 }
 
@@ -605,6 +1121,32 @@ $("btn-start-session").onclick = async () => {
   const testFile = $("test-selector").value;
   const stageVal = $("stage-selector").value;
   const stage    = stageVal === "" ? null : parseInt(stageVal);
+
+  // Fusion entry: for practice stages (1-4) with NO test pre-selected,
+  // show the interview screen with an empty dropdown and a prompt to pick a
+  // test first. Practice starts only when the user chooses one.
+  if (stage !== null && stage !== 0 && stage !== 5 && !testFile) {
+    STATE.selectedStage = stage;
+    try {
+      $("start-status").textContent = "Loading tests…";
+      await loadAllSets();
+      STATE.currentTask = null;
+      STATE._endCalled  = false;
+      if (!STATE.micWarmedUp && !STATE._browseWarmupStarted) {
+        STATE._browseWarmupStarted = true;
+        try {
+          const perm = await micPermissionState();
+          if (perm === "granted") backgroundMicWarmup();
+        } catch (e) { /* mic warm is best-effort */ }
+      }
+      $("start-status").textContent = "";
+      showInterviewPicker();
+    } catch (err) {
+      $("start-status").textContent = "⚠ Could not start: " + (err && err.message ? err.message : err);
+      console.error("Start (picker) failed:", err);
+    }
+    return;
+  }
 
   $("btn-start-session").disabled = true;
   $("start-status").textContent   = stage === 0 ? "" : "Loading...";
@@ -740,9 +1282,10 @@ $("btn-skip-question").onclick = () => {
 };
 
 function triggerEndSession() {
-  if (STATE._endCalled) return;
+  if (STATE._endCalled || STATE._restartRequested) return;
   STATE._endCalled = true;
 
+  if (STATE._setCompleteTimer) { clearTimeout(STATE._setCompleteTimer); STATE._setCompleteTimer = null; }
   stopAudio();
   abortTimer();
 
@@ -784,7 +1327,10 @@ function saveRecording(blob) {
   const fname     = getRunLabel(keyPrefix, stage, qId) + ".webm";
   STATE.recordings.push({
     stage, question_id: qId, q: q.q, audio: q.audio, blob, filename: fname,
-    set_label: setLabel, test_id: task?.set_id || "test", question_index: qIndex
+    set_label: setLabel, test_id: task?.set_id || "test", question_index: qIndex,
+    set_id: task?.set_id || "", set_name: task?.set_name || "",
+    opening_type: q.opening_type || "", question_type: q.question_type || "",
+    serial: q.serial != null ? q.serial : ""
   });
 }
 
@@ -842,6 +1388,7 @@ async function startPractice() {
   const imgEl = $("interview-img");
   if (imgEl) {
     imgEl.src = interviewerImageSrc(task);
+    imgEl.style.display = "";
   }
 
   // Stage intro — show expanded at session start (translated to native language)
@@ -857,8 +1404,13 @@ async function startPractice() {
   const questions    = task.questions || [];
   const responseTime = stage === 4 ? (task.response_time || 45) : STAGE_TIME[stage];
 
-  for (let i = 0; i < questions.length; i++) {
-    if (STATE._endCalled) return;
+  // Optional starting question index (from the browse list). Default 0.
+  let _startAt = STATE._startQIndex || 0;
+  if (_startAt < 0 || _startAt >= questions.length) _startAt = 0;
+  STATE._startQIndex = 0;  // consume it
+
+  for (let i = _startAt; i < questions.length; i++) {
+    if (STATE._endCalled || STATE._restartRequested) return;
 
     STATE._skipQuestion = false;  // reset skip flag for each question
     const question = questions[i];
@@ -874,9 +1426,15 @@ async function startPractice() {
     }
 
     // Header
-    const setLabel = task.set_label || task.set_id || "Set";
+    const setLabel = task.set_name || task.set_label || task.set_id || "Set";
     $("interview-question-label").textContent =
       `${setLabel} — Q${i + 1} of ${questions.length} — ${STAGE_META[stage] ? STAGE_META[stage].title : "Stage " + stage}`;
+
+    // Test dropdown + question tabs (highlight current)
+    var _pm = $("interview-pick-msg"); if (_pm) _pm.style.display = "none";
+    initInterviewControls();
+    populateInterviewDropdown();
+    renderQTabs(task, i + 1);
 
     // Reset UI
     $("response-timer-box").classList.add("hidden");
@@ -891,14 +1449,14 @@ async function startPractice() {
 
     // Play audio — student can pause/resume via the visible player bar
     await playAudioReliable(question.audio);
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
     if (STATE._skipQuestion) continue;
 
     // If record not yet pressed during audio, wait for it now
     if (!STATE._recordPressed) {
       await waitForRecordPress();
     }
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
     if (STATE._skipQuestion) continue;
 
     // Stop audio in case it is still playing
@@ -910,7 +1468,7 @@ async function startPractice() {
       console.error("Microphone unavailable");
       return;
     }
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
     if (STATE._skipQuestion) continue;
 
     // Start recording
@@ -920,7 +1478,7 @@ async function startPractice() {
     // Timer — may be aborted early by stop button
     STATE._lastBlob = null;
     await startResponseTimer(responseTime);
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
     if (STATE._skipQuestion) { stopRecording(); hidePostRecordButtons(); setRecordBtn("hidden"); continue; }
 
     // Timer expired naturally — stop recording if still active
@@ -934,7 +1492,7 @@ async function startPractice() {
 
     // Wait for Save & Next (or re-record loop)
     await waitForSaveOrRerecord(responseTime);
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
     if (STATE._skipQuestion) { hidePostRecordButtons(); setRecordBtn("hidden"); continue; }
 
     hidePostRecordButtons();
@@ -993,11 +1551,11 @@ async function runExamSession(task) {
     // Restore the normal exam view
     if (introEl)  { introEl.style.display = "none"; }
     if (promptEl) { promptEl.style.display = ""; }
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
   }
 
   for (let i = 0; i < questions.length; i++) {
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
     STATE._skipQuestion = false;
 
     const question = questions[i];
@@ -1014,7 +1572,7 @@ async function runExamSession(task) {
 
     // Play question audio
     await playAudioReliable(question.audio);
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
 
     // Ensure mic is ready
     const micOk = await ensureMic();
@@ -1042,7 +1600,7 @@ async function runExamSession(task) {
       }, 1000);
     });
 
-    if (STATE._endCalled) return;
+    if (STATE._endCalled || STATE._restartRequested) return;
 
     // Stop recording and save
     $("exam-mic-icon").style.opacity = ".4";
@@ -1065,27 +1623,20 @@ $("btn-end-exam").onclick = triggerEndSession;
 // ═══════════════════════════════════════════════════
 
 function showSetComplete(task) {
-  const setLabel = task.set_label || task.set_id || "Set";
-  const stage    = STATE.selectedStage;
-  const count    = STATE.recordings.length;
-
-  $("set-complete-title").textContent =
-    `${setLabel} — ${STAGE_META[stage] ? STAGE_META[stage].title : "Stage " + stage} complete`;
-  $("set-complete-desc").textContent =
-    `You have recorded ${count} question${count !== 1 ? "s" : ""} in ${STAGE_META[stage] ? STAGE_META[stage].title : "Stage " + stage}. Would you like to continue practicing or end the session?`;
-
-  showScreen("screen-set-complete");
+  // A set was completed: return to the picker screen (same screen shown on entry)
+  // with a message inviting another test or ending to see analysis.
+  STATE.currentTask = null;
+  STATE._justCompletedSet = true;
+  showInterviewPicker();
 }
 
-$("btn-continue-practice").onclick = () => {
+// (The "Practice Another Test" button was removed — set-complete now
+// auto-returns to the test picker. Guard kept in case the element is absent.)
+var _contBtn = $("btn-continue-practice");
+if (_contBtn) _contBtn.onclick = () => {
   STATE._endCalled = false;
-  // Go back to start screen, keep stage pre-selected
-  const currentStage = STATE.selectedStage;
-  $("test-selector").value  = "";
-  if (currentStage) $("stage-selector").value = String(currentStage);
-  checkStartReady();
-  $("start-status").textContent = "";
-  showScreen("screen-start");
+  STATE.currentTask = null;
+  showInterviewPicker();
 };
 
 // ═══════════════════════════════════════════════════
@@ -1099,6 +1650,7 @@ function renderPracticeSupport(task, question, stage) {
 
   // Question card — default hidden
   questionCard.classList.remove("hidden");
+  questionCard.style.display = "";
   const escaped     = escapeHTML(question.q);
   const highlighted = applyHighlights(escaped, question.highlight_phrases || []);
   $("practice-question-text").innerHTML = highlighted;
@@ -1109,9 +1661,12 @@ function renderPracticeSupport(task, question, stage) {
 
   // Support card
   supportCard.classList.remove("hidden");
+  supportCard.style.display = "";
+  var ideaWrapEl = $("idea-frame-wrap");
+  if (ideaWrapEl) ideaWrapEl.style.display = "";
   const stageNum = parseInt(stage) || 1;
   const meta = STAGE_META[stageNum] || STAGE_META[1];
-  $("practice-stage-title").textContent       = meta.title;
+  $("practice-stage-title").textContent       = (stageNum === 4) ? "Reference Structure" : meta.title;
   const instrEl = $("practice-stage-instruction");
   instrEl.style.color = "#555";
   if (stageNum === 4) {
@@ -1120,6 +1675,12 @@ function renderPracticeSupport(task, question, stage) {
   } else {
     translateUI(meta.instruction, instrEl, false);
   }
+
+  // Preserve the "Help me with ideas" panel across question re-renders:
+  // move it out before clearing the list (it gets re-inserted after area1 below).
+  const ideaWrapSafe = $("idea-frame-wrap");
+  const supportCardEl = $("practice-support-card");
+  if (ideaWrapSafe && supportCardEl) supportCardEl.appendChild(ideaWrapSafe);
 
   reasonList.innerHTML = "";
   reasonList.style.display = $("toggle-support").checked ? "" : "none";
@@ -1171,10 +1732,10 @@ function renderPracticeSupport(task, question, stage) {
   }
   const area4 = area4Lines.join("\n").trim();
 
-  // Render areas — skip empty
+  // Render areas — skip empty. area2 (the reasons list) is intentionally omitted;
+  // the same reasons are available in the "Help me with ideas" dropdown.
   const areasToShow = [
     { text: normalize(area1), cls: "support-area area1" },
-    { text: normalize(area2), cls: "support-area area2" },
     { text: normalize(area3), cls: "support-area area3", showWordCount: true },
     { text: normalize(area4), cls: "support-area area4" },
   ];
@@ -1192,6 +1753,18 @@ function renderPracticeSupport(task, question, stage) {
       div.appendChild(wc);
     }
     reasonList.appendChild(div);
+  }
+
+  // Move the "Help me with ideas" panel to sit right under the template (area1),
+  // above the sample answer (area3). If there's no area1, append it to the list.
+  const ideaWrap = $("idea-frame-wrap");
+  if (ideaWrap) {
+    const area1El = reasonList.querySelector(".area1");
+    if (area1El && area1El.parentNode) {
+      area1El.parentNode.insertBefore(ideaWrap, area1El.nextSibling);
+    } else {
+      reasonList.appendChild(ideaWrap);
+    }
   }
 }
 
@@ -1258,7 +1831,13 @@ async function transcribeRecording(recording) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ audio_base64, filename: recording.filename })
   });
-  if (!res.ok) throw new Error("Transcription failed");
+  if (!res.ok) {
+    let detail = "";
+    try { const e = await res.json(); detail = e.error || JSON.stringify(e); }
+    catch (_) { try { detail = await res.text(); } catch (__) {} }
+    console.error("Transcription failed (" + res.status + "):", detail);
+    throw new Error("Transcription failed: " + detail);
+  }
   const data = await res.json();
   return data.transcript || "";
 }
@@ -1284,8 +1863,17 @@ async function runTranscriptionFlow() {
     const card = document.createElement("div");
     card.className = "result-item";
     card.id = `result-card-${i}`;
+    var _propLabel = questionHintLabel({ opening_type: r.opening_type, question_type: r.question_type });
+    var _testId = r.set_id || r.test_id || "";
+    var _testName = r.set_name || "";
+    var _headBits = [];
+    if (_testId) _headBits.push(escapeHTML(_testId));
+    if (_testName) _headBits.push(escapeHTML(_testName));
+    _headBits.push('Q' + r.question_index);
+    if (_propLabel) _headBits.push(escapeHTML(_propLabel));
+    _headBits.push(STAGE_META[r.stage] ? STAGE_META[r.stage].title : 'Stage ' + r.stage);
     card.innerHTML =
-      '<div class="result-num">' + escapeHTML(r.set_label || "") + ' — Q' + r.question_index + ' — ' + (STAGE_META[r.stage] ? STAGE_META[r.stage].title : 'Stage ' + r.stage) + '</div>' +
+      '<div class="result-num">' + _headBits.join(' — ') + '</div>' +
       '<p class="result-q">' + escapeHTML(r.q) + '</p>' +
       '<div class="result-audio-block">' +
         '<div class="result-audio-label">Your Recording</div>' +
@@ -1374,7 +1962,13 @@ async function runAnalysisAll(transcripts) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questions, language: analysisLang() })
     });
-    if (!res.ok) throw new Error("Analysis failed");
+    if (!res.ok) {
+      let detail = "";
+      try { const e = await res.json(); detail = e.error || JSON.stringify(e); }
+      catch (_) { try { detail = await res.text(); } catch (__) {} }
+      console.error("Analysis failed (" + res.status + "):", detail);
+      throw new Error("Analysis failed: " + detail);
+    }
     const data = await res.json();
     const parsed = data.parsed || {};
 
@@ -1562,7 +2156,14 @@ async function exportResultsDoc(opts) {
       : `<span style="color:#999">Your recording unavailable</span>`;
 
     const stageTitle = STAGE_META[r.stage] ? STAGE_META[r.stage].title : ("Stage " + r.stage);
-    const header = `<h2 style="color:#00736b;font-size:16px">${escapeHTML(r.set_label || "")} — Q${r.question_index || (i + 1)} — ${escapeHTML(stageTitle)}</h2>`;
+    const propLabel = questionHintLabel({ opening_type: r.opening_type, question_type: r.question_type });
+    const headBits = [];
+    if (r.set_id || r.test_id) headBits.push(escapeHTML(r.set_id || r.test_id));
+    if (r.set_name) headBits.push(escapeHTML(r.set_name));
+    headBits.push("Q" + (r.question_index || (i + 1)));
+    if (propLabel) headBits.push(escapeHTML(propLabel));
+    headBits.push(escapeHTML(stageTitle));
+    const header = `<h2 style="color:#00736b;font-size:16px">${headBits.join(" — ")}</h2>`;
     const question = r.q ? `<p><strong>Question:</strong> ${escapeHTML(r.q)}</p>` : "";
     const words = countWords(r.transcript || "");
     const transcript =
@@ -1606,7 +2207,10 @@ async function exportResultsDoc(opts) {
     summary = `<p style="font-size:20px;font-weight:700;color:#00736b">Average Score: ${avg} / 5 (${bands.length} scored)</p>`;
   }
 
-  const setLabel = STATE.recordings[0] ? (STATE.recordings[0].set_label || "") : "";
+  const _r0 = STATE.recordings[0];
+  const setLabel = _r0
+    ? [(_r0.set_id || _r0.test_id || ""), (_r0.set_name || "")].filter(Boolean).join(" — ")
+    : "";
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
     <body style="font-family:Arial,sans-serif">
       <h1>Interview — Results</h1>
@@ -1680,6 +2284,23 @@ $("btn-new-session").onclick = () => {
 // ACCESS GATE
 // ═══════════════════════════════════════════════════
 
+// Warm up the microphone once, right after login (per the "authorize once,
+// warm up per session" model). The mic stream is held for the whole session,
+// so warming here is safe and removes any wait when practice starts. The audio
+// OUTPUT pipeline is still re-primed before the first question as a safety net.
+async function warmUpMicAfterLogin() {
+  if (STATE.micWarmedUp || STATE._loginWarmupStarted) return;
+  STATE._loginWarmupStarted = true;
+  try {
+    // Request mic permission now (prompts on first login), then warm up.
+    const ok = await ensureMic();
+    if (ok) {
+      await backgroundMicWarmup();     // silent, no screen switch
+    }
+    // If denied, the first practice entry will guide the user to enable it.
+  } catch (e) { /* best-effort */ }
+}
+
 async function validateKey(key) {
   const res = await fetch("/.netlify/functions/api", {
     method: "POST",
@@ -1694,6 +2315,7 @@ function initGate() {
   if (sessionStorage.getItem("access_granted") === "true") {
     showScreen("screen-start");
     loadTestIndex();
+    warmUpMicAfterLogin();
     return;
   }
   // Pre-fill a remembered key (student still clicks Continue)
@@ -1740,6 +2362,7 @@ $("btn-gate-submit").onclick = async () => {
       warmUpTranslations(); // fire-and-forget background cache warmup
       showScreen("screen-start");
       loadTestIndex();
+      warmUpMicAfterLogin();
     } else {
       $("gate-status").textContent  = result.error || "Invalid key.";
       $("btn-gate-submit").disabled = false;

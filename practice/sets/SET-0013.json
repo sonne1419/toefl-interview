@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0013",
+  "set_name": "Leisure Time",
   "order": 16,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 49,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "Do you prefer spending your free time on familiar activities or trying something new? For example, would you rather return to a hobby you already enjoy or explore a new place or activity? Why?",
       "audio": "practice/audio/SET-0013/SET-0013_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 50,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "I see.\nIf you were helping someone make better use of their free time, what methods would you recommend? Please include examples.",
       "audio": "practice/audio/SET-0013/SET-0013_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 51,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "screen-free breaks be used in schools or workplaces",
         "a personal choice"
@@ -155,6 +162,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 52,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "keeping life in balance"
       ],

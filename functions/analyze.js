@@ -143,6 +143,14 @@ function callOpenAI(apiKey, systemPrompt, userContent) {
         let data = "";
         res.on("data", (chunk) => (data += chunk));
         res.on("end", () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            let msg = data;
+            try { const j = JSON.parse(data); if (j.error) msg = j.error.message; } catch (e) {}
+            const err = new Error(`OpenAI ${res.statusCode}: ${msg}`);
+            err.statusCode = res.statusCode;
+            reject(err);
+            return;
+          }
           try {
             const json = JSON.parse(data);
             if (json.error) reject(new Error(json.error.message));
@@ -164,9 +172,14 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return { statusCode: 500, body: JSON.stringify({ error: "OPENAI_API_KEY not set" }) };
+  // Trim keys (stray whitespace/newlines from adjacent multi-line env vars can
+  // corrupt a key -> 401) and fall back from OPENAI_API_KEY to ALT_OPENAI_KEY.
+  const _keys = [];
+  for (const k of [process.env.OPENAI_API_KEY, process.env.ALT_OPENAI_KEY]) {
+    if (k && k.trim() && _keys.indexOf(k.trim()) === -1) _keys.push(k.trim());
+  }
+  if (!_keys.length) {
+    return { statusCode: 500, body: JSON.stringify({ error: "No OpenAI API key set (OPENAI_API_KEY / ALT_OPENAI_KEY)" }) };
   }
 
   let body;
@@ -189,7 +202,18 @@ exports.handler = async (event) => {
   const userContent = `${INTERVIEW_SAMPLES}\n\n${questionBlocks}`;
 
   try {
-    const analysis = await callOpenAI(apiKey, withLanguage(INTERVIEW_SYSTEM, language), userContent);
+    let analysis, lastErr;
+    for (const key of _keys) {
+      try {
+        analysis = await callOpenAI(key, withLanguage(INTERVIEW_SYSTEM, language), userContent);
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        if (e.statusCode !== 401 && e.statusCode !== 403) break;  // only retry on auth errors
+      }
+    }
+    if (lastErr) throw lastErr;
 
     // Parse per-question results using === Q1 === markers
     const parts = analysis.split(/={2,}\s*(Q\d+|OVERALL)\s*={2,}/);

@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0008",
+  "set_name": "Skills & Career Development",
   "order": 11,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 29,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "When you need to learn a new skill for school or work, do you prefer to watch someone demonstrate it or read instructions first? Why?",
       "audio": "practice/audio/SET-0008/SET-0008_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 30,
+      "opening_type": "wh_q",
       "highlight_phrases": [],
       "q": "I see.\nWhat kinds of skills do people at your school or workplace want to improve for their future careers? Give some examples or categories.",
       "audio": "practice/audio/SET-0008/SET-0008_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 31,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "use short online training courses in the future"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 32,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "young workers' career success"
       ],

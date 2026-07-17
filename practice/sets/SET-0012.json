@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0012",
+  "set_name": "Shopping & Purchases",
   "order": 15,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 45,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "When you buy something you use regularly, do you prefer to shop online or visit a store? Why?",
       "audio": "practice/audio/SET-0012/SET-0012_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 46,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see.\nIs it better to choose a lower-priced product or pay more for one that may last longer? Why?",
       "audio": "practice/audio/SET-0012/SET-0012_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 47,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "necessary to read customer reviews before buying an unfamiliar product"
       ],
@@ -154,6 +161,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 48,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "managing personal finances"
       ],

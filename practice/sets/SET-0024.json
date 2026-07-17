@@ -1,5 +1,6 @@
 {
   "set_id": "SET-0024",
+  "set_name": "University Life",
   "order": 27,
   "interviewer_gender": "am",
   "interviewer_image": "assets/am.webp",
@@ -80,6 +81,8 @@
     {
       "question_id": "q001",
       "question_type": "free",
+      "serial": 93,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "What kinds of campus activities do students around you usually like, such as sports, student clubs, or volunteer events?",
       "audio": "practice/audio/SET-0024/SET-0024_q001.mp3",
@@ -104,6 +107,8 @@
     {
       "question_id": "q002",
       "question_type": "free",
+      "serial": 94,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [],
       "q": "I see. When you have free time on campus, do you join a club activity, exercise, or spend time with friends? Why?",
       "audio": "practice/audio/SET-0024/SET-0024_q002.mp3",
@@ -128,6 +133,8 @@
     {
       "question_id": "q003",
       "question_type": "required_wording",
+      "serial": 95,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "spend more time participating in activities outside the classroom",
         "focus mainly on academic work"
@@ -155,6 +162,8 @@
     {
       "question_id": "q004",
       "question_type": "required_wording",
+      "serial": 96,
+      "opening_type": "pick_1_of_2",
       "highlight_phrases": [
         "a successful student life"
       ],
