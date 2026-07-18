@@ -248,25 +248,75 @@ select:focus { outline: 2px solid #00736b; border-color: #00736b; }
 }
 
 /* ── Left column ─────────────────────────────── */
-#interview-left {
-  width: 220px;
-  flex-shrink: 0;
+/* #interview-left and #interview-img were removed: the record controls now sit
+   below the cards in the single full-width panel, so the analysis appears where
+   the student is already reading instead of in a narrow side strip. */
+
+/* Record controls, centred under the practice cards (mirrors Stage 0). */
+#practice-record-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 16px;
-  border-right: 1px solid #e8e8e8;
-  background: white;
-  gap: 14px;
-  overflow-y: auto;
+  gap: 10px;
+  margin-top: 4px;
 }
 
-#interview-img {
-  width: 140px;
-  height: 140px;
-  object-fit: contain;
-  border-radius: 10px;
-  background: #f5f5f5;
+#practice-record-area #post-record-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+#practice-record-area #post-record-buttons.hidden {
+  display: none;
+}
+
+/* Reference structure (short) beside the idea panel (needs room). */
+#practice-support-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: start;
+}
+
+/* Both columns start at the top so "Reference Structure" and "Help me with
+   ideas" sit on the same line. */
+#practice-support-split > #practice-support-left,
+#practice-support-split > #idea-frame-wrap {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+#practice-support-split > #idea-frame-wrap {
+  border-top: none;
+  border-left: 1px dashed #cfe6e4;
+  padding-left: 16px;
+}
+
+/* The idea heading matches the reference heading's line box, so the two align
+   even though one is larger than the other. */
+#practice-support-split #idea-frame-heading {
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#practice-support-split #practice-stage-title {
+  line-height: 26px;
+}
+
+@media (max-width: 900px) {
+  #practice-support-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #practice-support-split > #idea-frame-wrap {
+    border-left: none;
+    border-top: 1px dashed #cfe6e4;
+    padding-left: 0;
+    padding-top: 12px;
+  }
 }
 
 /* Record button */
@@ -1118,6 +1168,104 @@ audio { height: 34px; min-width: 200px; }
   margin-bottom: 14px;
 }
 
+
+
+/* The Band 5 sample answers a different question — name it so the comparison
+   feedback does not refer to something the student never saw. */
+.practice-sample-q {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  margin: 4px 0 6px;
+  line-height: 1.5;
+}
+
+/* Stage 4 inline result: sits in the wide practice panel under the record
+   controls, matching where Stage 0 puts its result. */
+#practice-result-area {
+  margin-top: 14px;
+  border-top: 1px solid #eee;
+  padding-top: 14px;
+}
+
+/* Stage 0 results — "try again" box under any card scoring below Band 5. */
+.stage0-redo {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px dashed #b2dbd8;
+  border-radius: 8px;
+  background: #fafffe;
+  text-align: center;
+}
+
+.stage0-redo-title {
+  font-weight: 700;
+  color: #00736b;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.stage0-redo-desc {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.stage0-redo .btn-record {
+  margin: 0 auto;
+}
+
+.stage0-redo-timer {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #c0392b;
+}
+
+.stage0-redo-status {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #888;
+  min-height: 15px;
+}
+
+/* Stage 0 results — side-by-side comparison grid.
+   Left column is the student, right column is the 5-point sample. */
+.stage0-compare {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-top: 10px;
+}
+
+.stage0-compare td {
+  width: 50%;
+  vertical-align: top;
+  padding: 10px 12px;
+  border: 1px solid #eee;
+}
+
+.stage0-compare .cmp-right {
+  background: #fafafa;
+}
+
+.stage0-compare tr:first-child td {
+  border-bottom: none;
+}
+
+/* Stack the columns on narrow screens rather than squeezing them. */
+@media (max-width: 720px) {
+  .stage0-compare,
+  .stage0-compare tbody,
+  .stage0-compare tr,
+  .stage0-compare td {
+    display: block;
+    width: 100%;
+  }
+  .stage0-compare td:empty { display: none; }
+  .stage0-compare tr:first-child td { border-bottom: 1px solid #eee; }
+}
+
 .stage0-table {
   width: 100%;
   border-collapse: collapse;
@@ -1163,6 +1311,44 @@ audio { height: 34px; min-width: 200px; }
 .stage0-full {
   color: #333;
   font-size: 13px;
+}
+
+/* Generated logic spine — sits beside the sample, never replaces it. */
+.stage0-spine {
+  color: #5b2c6f;
+  font-size: 12.5px;
+  background: #faf5fc;
+  border-radius: 4px;
+  line-height: 1.6;
+}
+
+.stage0-spine:empty::before {
+  content: "—";
+  color: #c9b4d8;
+}
+
+/* Column headers now carry controls on a second line. The header itself is
+   uppercased and letter-spaced, so every control inside opts out of both. */
+.stage0-table th select,
+.stage0-table th button,
+.stage0-table th label,
+.stage0-table th input,
+#stage0-full-toggle-label,
+#s0-idea-status {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.stage0-table th {
+  vertical-align: top;
+}
+
+#stage0-full-toggle-label:hover {
+  opacity: 0.75;
+}
+
+#s0-btn-idea-fill:hover {
+  background: #f2e6f8;
 }
 
 #stage0-timer-box {

@@ -10,13 +10,13 @@ const PRACTICE_REASONS = {
 
 const STAGE_META = {
   1: { title: "Statement & Reason",  instruction: "Say your answer and one reason.",
-       intro: "1. Pick a test from the dropdown menu to begin.\n2. Read the question and focus on just the first two sentences of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues.\n3. When you need ideas, select a reason from the list or ask the system to try to answer the statement and reason.\n4. After you finish a test, pick another test or press End Session to see your transcript and analysis." },
+       intro: "Read the question and focus on just the first two sentences of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
   2: { title: "Before Example",      instruction: "Practice the before/past example block.",
        intro: "Read the question and focus on just the Before Example part of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
   3: { title: "After Example",       instruction: "Practice the after/current result block.",
        intro: "Read the question and focus on just the After Example part of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
   4: { title: "Full Answer",         instruction: "Use the short cues to speak the full answer.",
-       intro: "1. Pick a test from the dropdown menu to begin.\n2. Read the question and focus on your full answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues.\n3. When you need ideas, select a reason from the list or ask the system to choose a reason for you to see an idea structure that you can use.\n4. After you finish a test, pick another test or press End Session to see your transcript and analysis." },
+       intro: "Read the question and focus on the full answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
   5: { title: "Exam Mode",           instruction: "Exam mode — no cues.",
        intro: "" }
 };
@@ -46,7 +46,11 @@ const STATE = {
   _restartRequested: false, // signal the practice loop to bail for a test/question switch
   _setCompleteTimer: null,  // timer for auto-return to picker after a set completes
   _loginWarmupStarted: false, // guard: mic warmup kicked off after login
-  _browseWarmupStarted: false // guard: fallback warmup on practice entry
+  _browseWarmupStarted: false, // guard: fallback warmup on practice entry
+  _gradeToken:       0,     // bumped per take so a stale grade can't overwrite a newer one
+  _lastTranscript:   "",
+  _lastBand:         null,
+  _lastGap:          ""
 };
 
 // ═══════════════════════════════════════════════════
@@ -216,10 +220,6 @@ function showInterviewPicker() {
   if ($("stage-intro-bar-text"))
     $("stage-intro-bar-text").textContent = "📋 About this stage — " + (STAGE_META[stage] ? STAGE_META[stage].title : "");
   if ($("stage-intro-body")) $("stage-intro-body").style.display = "";
-
-  // Hide the interviewer image until a test is chosen (avoid broken-image icon).
-  var imgEl = $("interview-img");
-  if (imgEl) { imgEl.removeAttribute("src"); imgEl.style.display = "none"; }
 
   // Hide the practice cards (question card + support card) so only the picker
   // prompt shows. Force display:none so nothing can override it.
@@ -692,6 +692,15 @@ async function warmUpTranslations() {
   const lang = (localStorage.getItem("analysis_lang") || "").trim();
   if (!lang || lang.toLowerCase() === "english") return;
 
+  // One-time cleanup: "Band" and "words" were briefly sent to the translator,
+  // which turned "Band" into 樂團 (a musical band). They are score labels, not
+  // prose, so drop any cached translations left over from that.
+  try {
+    ["Band", "words"].forEach(k => {
+      localStorage.removeItem("ui_tr::" + lang.toLowerCase() + "::" + k);
+    });
+  } catch (e) {}
+
   // Build the string list from where the text actually lives (no hardcoded
   // duplicates, so it can't drift from what's displayed):
   //  - every STAGE_META intro + instruction
@@ -703,6 +712,18 @@ async function warmUpTranslations() {
     if (STAGE_META[k].instruction) set.add(STAGE_META[k].instruction.trim());
   });
   set.add("Responses of 80 words and above are recommended.");
+  // "Show sample" only appears in the DOM after the student ticks Hide sample,
+  // so it would miss the [data-tr] sweep below. Add it explicitly.
+  set.add("Show sample");
+  // The Stage 0 results page is built after End Session, so its labels are not
+  // in the DOM during warm-up. Add them explicitly to avoid an English flash.
+  ["Your answer", "(not scored)", "Your Recording",
+   "5-point sample answer benchmark", "Compared with the 5-point sample",
+   "Band 5 sample answer (a different question)", "Compared with a Band 5 answer",
+   "The sample answers a different question:", "It answers:",
+   "Try this question again",
+   "Re-record your answer and compare it with the 5-point sample again. You have 45 seconds."
+  ].forEach(t => set.add(t));
   if (STAGE_META[4] && STAGE_META[4].instruction) {
     set.add((STAGE_META[4].instruction + "\nResponses of 80 words and above are recommended.").trim());
   }
@@ -946,10 +967,210 @@ function showPostRecordButtons() {
   setRecordBtn("hidden");
   $("response-timer-box").classList.add("hidden");
   $("post-record-buttons").classList.remove("hidden");
+  // Stage 4 grades the take right away so Record Again is an informed retry.
+  if (STATE.selectedStage === 4 && STATE._lastBlob) {
+    practiceGradeTake(STATE._lastBlob);
+  }
 }
 
 function hidePostRecordButtons() {
   $("post-record-buttons").classList.add("hidden");
+  const area = $("practice-result-area");
+  if (area) area.classList.add("hidden");
+}
+
+// The Band 5 reference for the current set. It answers a DIFFERENT question
+// from the one being practised, so it is a quality benchmark rather than a
+// model answer — the results page and the comparison prompt both say so.
+// Stage 4's Band 5 reference, chosen by question shape: a pick-1-of-2 question
+// and a WH-question need different openings, and a required ending changes the
+// close. Each sample carries the question it answers — the student is compared
+// against a DIFFERENT question, so naming it keeps that honest.
+// Source: SET json -> stage4_samples, built from the Settings sheet.
+function practiceSampleCombo(q) {
+  const o = (q && q.opening_type) || "";
+  const opening = (o === "wh_q" || o === "open") ? "open" : "pick1";
+  const ending  = (q && q.question_type === "required_wording") ? "required" : "free";
+  return opening + "_" + ending;
+}
+
+function practiceBand5Entry(qOverride) {
+  try {
+    const task = STATE.currentTask;
+    const q    = qOverride || STATE.currentQuestion;
+    if (!task || !task.stage4_samples) return null;
+    return task.stage4_samples[practiceSampleCombo(q)] || null;
+  } catch (e) { return null; }
+}
+
+function practiceBand5Sample(qOverride) {
+  const e = practiceBand5Entry(qOverride);
+  return e ? String(e.answer || "").replace(/\\n/g, "\n").trim() : "";
+}
+
+function practiceBand5Question(qOverride) {
+  const e = practiceBand5Entry(qOverride);
+  return e ? String(e.question || "").trim() : "";
+}
+
+// ═══════════════════════════════════════════════════
+// STAGE 4 — IMMEDIATE GRADING AFTER EACH TAKE
+// Mirrors Stage 0: transcribe -> band -> comparison with a Band 5 sample.
+// The result shows while the post-record buttons are up, so the student can
+// read it before choosing Record Again or Save & Next.
+// ═══════════════════════════════════════════════════
+
+async function practiceGradeTake(blob) {
+  const area   = $("practice-result-area");
+  const textEl = $("practice-transcript-text");
+  const block  = $("practice-analysis-block");
+  const gapEl  = $("practice-gap-block");
+  if (!area || !textEl) return;
+
+  const question = STATE.currentQuestion ? (STATE.currentQuestion.q || "") : "";
+  const token    = ++STATE._gradeToken;   // stale-result guard for fast re-records
+
+  area.classList.remove("hidden");
+  block.classList.add("hidden");
+  gapEl.classList.add("hidden");
+  $("practice-transcript-label").classList.remove("hidden");
+  textEl.classList.remove("hidden");
+  textEl.textContent = "Transcribing…";
+
+  // ── Transcribe ──
+  let transcript = "";
+  try {
+    const audio_base64 = await blobToBase64(blob);
+    const res = await fetch("/.netlify/functions/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audio_base64, filename: "practice.webm" })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Transcription failed");
+    transcript = normalizeTranscript(data.transcript || "");
+  } catch (e) {
+    console.error("Stage 4 transcription failed:", e.message);
+    if (token === STATE._gradeToken) textEl.textContent = "(transcription failed)";
+    return;
+  }
+  if (token !== STATE._gradeToken) return;   // a newer take superseded this one
+
+  const words = countWords(transcript);
+  textEl.textContent = transcript || "(no speech detected)";
+  $("practice-transcript-label").textContent = "Transcript — " + words + " words";
+  STATE._lastTranscript = transcript;
+  if (!transcript.trim()) return;
+
+  // ── Band ──
+  block.innerHTML = '<div class="analysis-feedback">Scoring…</div>';
+  block.classList.remove("hidden");
+
+  let band = null;
+  try {
+    const res = await fetch("/.netlify/functions/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        questions: [{ question, transcript }],
+        language: analysisLang(),
+        mode: "band_only"
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Analysis failed");
+    const result = (data.parsed || {}).Q1;
+    if (!result) {
+      console.error("Stage 4: could not parse a band. Raw:", data.raw);
+      throw new Error("No result");
+    }
+    band = result.band;
+  } catch (e) {
+    console.error("Stage 4 analysis failed:", e.message);
+    if (token === STATE._gradeToken) {
+      block.innerHTML = '<div class="analysis-error">Scoring failed. Please try again.</div>';
+    }
+    return;
+  }
+  if (token !== STATE._gradeToken) return;
+
+  block.innerHTML = (band !== null)
+    ? '<div class="analysis-band">Band ' + band + ' · ' + words + ' words</div>'
+    : '<div class="analysis-error">Could not score this response.</div>';
+
+  STATE._lastBand = band;
+
+  // ── Comparison (below Band 5 only) ──
+  const sample = practiceBand5Sample();
+  if (typeof band !== "number" || band >= 5) return;
+  if (!sample) {
+    // Sets built before stage4_samples existed have no reference to compare
+    // against. Say so rather than silently showing a bare band.
+    console.warn("Stage 4: no Band 5 sample for this question shape (" +
+                 practiceSampleCombo(STATE.currentQuestion) +
+                 "). Rebuild the sets with the new template to enable comparison.");
+    return;
+  }
+
+  gapEl.innerHTML = '<div class="analysis-feedback">Comparing with a Band 5 answer…</div>';
+  gapEl.classList.remove("hidden");
+  // The comparison grid repeats the transcript in its left cell, so drop the
+  // standalone copy above it rather than showing the answer twice.
+  $("practice-transcript-label").classList.add("hidden");
+  textEl.classList.add("hidden");
+
+  try {
+    const res = await fetch("/.netlify/functions/why-not-5-speaking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question, answer: transcript, sample, band,
+        language: analysisLang(),
+        // The sample answers a different question here, so the prompt must not
+        // claim otherwise or the model faults the student for content mismatch.
+        same_topic: false,
+        sample_question: practiceBand5Question()
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Comparison failed");
+    if (token !== STATE._gradeToken) return;
+
+    STATE._lastGap = data.explanation || "";
+    // Show the answer beside the sample, then the comparison underneath — the
+    // same shape as the results page. Without the sample on screen, feedback
+    // like "the sample develops its example" refers to something unseen.
+    const sq = practiceBand5Question();
+    gapEl.innerHTML =
+      '<table class="stage0-compare"><tbody><tr>' +
+        '<td class="cmp-left">' +
+          '<div class="result-transcript-label">' +
+            '<span data-tr="Your answer">Your answer</span> — ' + words + ' words</div>' +
+          '<div class="result-transcript-text">' + escapeHTML(transcript) + '</div>' +
+        '</td>' +
+        '<td class="cmp-right">' +
+          '<div class="result-transcript-label">' +
+            '<span data-tr="Band 5 sample answer (a different question)">Band 5 sample answer (a different question)</span> — ' +
+            countWords(sample) + ' words</div>' +
+          (sq ? '<div class="practice-sample-q">' +
+                  '<span data-tr="It answers:">It answers:</span> ' + escapeHTML(sq) + '</div>' : "") +
+          '<div class="result-transcript-text" style="color:#444;">' + escapeHTML(sample) + '</div>' +
+        '</td>' +
+      '</tr></tbody></table>' +
+      '<div class="result-analysis-block">' +
+        '<div class="result-transcript-label" data-tr="Compared with a Band 5 answer">Compared with a Band 5 answer</div>' +
+        '<div class="analysis-feedback" style="margin-top:6px;">' +
+          (STATE._lastGap).split("\n").filter(l => l.trim())
+            .map(l => '<div class="analysis-feedback-line">' + escapeHTML(l) + '</div>').join("") +
+        '</div>' +
+      '</div>';
+    try { translateStaticEls("#practice-result-area"); } catch (e) {}
+  } catch (e) {
+    console.error("Stage 4 comparison failed:", e.message);
+    if (token === STATE._gradeToken) {
+      gapEl.innerHTML = '<div class="analysis-error">Could not compare with a Band 5 answer.</div>';
+    }
+  }
 }
 
 // Wait for Save & Next or Record Again
@@ -1330,8 +1551,17 @@ function saveRecording(blob) {
     set_label: setLabel, test_id: task?.set_id || "test", question_index: qIndex,
     set_id: task?.set_id || "", set_name: task?.set_name || "",
     opening_type: q.opening_type || "", question_type: q.question_type || "",
-    serial: q.serial != null ? q.serial : ""
+    serial: q.serial != null ? q.serial : "",
+    // Stage 4 grades each take as it finishes, so the results page can replay
+    // the score instead of re-running the whole analysis at End Session.
+    transcript: (stage === 4) ? (STATE._lastTranscript || "") : undefined,
+    band:       (stage === 4) ? STATE._lastBand : undefined,
+    gap:        (stage === 4) ? (STATE._lastGap || "") : undefined,
+    sample:     (stage === 4) ? practiceBand5Sample() : undefined,
+    sample_q:   (stage === 4) ? practiceBand5Question() : undefined
   });
+  // Clear so the next question cannot inherit this take's result.
+  STATE._lastTranscript = ""; STATE._lastBand = null; STATE._lastGap = "";
 }
 
 
@@ -1382,13 +1612,6 @@ async function startPractice() {
   if (stage === 5) {
     await runExamSession(task);
     return;
-  }
-
-  // Set interviewer image from JSON
-  const imgEl = $("interview-img");
-  if (imgEl) {
-    imgEl.src = interviewerImageSrc(task);
-    imgEl.style.display = "";
   }
 
   // Stage intro — show expanded at session start (translated to native language)
@@ -1676,11 +1899,8 @@ function renderPracticeSupport(task, question, stage) {
     translateUI(meta.instruction, instrEl, false);
   }
 
-  // Preserve the "Help me with ideas" panel across question re-renders:
-  // move it out before clearing the list (it gets re-inserted after area1 below).
-  const ideaWrapSafe = $("idea-frame-wrap");
-  const supportCardEl = $("practice-support-card");
-  if (ideaWrapSafe && supportCardEl) supportCardEl.appendChild(ideaWrapSafe);
+  // The idea panel is a sibling of the reason list inside #practice-support-split,
+  // so clearing the list no longer touches it — no need to park it anywhere.
 
   reasonList.innerHTML = "";
   reasonList.style.display = $("toggle-support").checked ? "" : "none";
@@ -1734,9 +1954,12 @@ function renderPracticeSupport(task, question, stage) {
 
   // Render areas — skip empty. area2 (the reasons list) is intentionally omitted;
   // the same reasons are available in the "Help me with ideas" dropdown.
+  // area3 is a full worked answer to a DIFFERENT question. Showing it beside the
+  // current question makes students think it is the model answer for THIS one,
+  // so it is kept out of the practice view. It still appears on the results page
+  // as a clearly-labelled Band 5 reference.
   const areasToShow = [
     { text: normalize(area1), cls: "support-area area1" },
-    { text: normalize(area3), cls: "support-area area3", showWordCount: true },
     { text: normalize(area4), cls: "support-area area4" },
   ];
 
@@ -1755,17 +1978,8 @@ function renderPracticeSupport(task, question, stage) {
     reasonList.appendChild(div);
   }
 
-  // Move the "Help me with ideas" panel to sit right under the template (area1),
-  // above the sample answer (area3). If there's no area1, append it to the list.
-  const ideaWrap = $("idea-frame-wrap");
-  if (ideaWrap) {
-    const area1El = reasonList.querySelector(".area1");
-    if (area1El && area1El.parentNode) {
-      area1El.parentNode.insertBefore(ideaWrap, area1El.nextSibling);
-    } else {
-      reasonList.appendChild(ideaWrap);
-    }
-  }
+  // The idea panel sits in the right-hand column of #practice-support-split and
+  // stays there; it is no longer re-inserted into the reason list.
 }
 
 
@@ -1804,11 +2018,61 @@ $("toggle-support").onchange = () => {
 function endSession() {
   $("saving-modal").classList.add("hidden");
   clearInterval(STATE.timerInterval);
+
+  // Stage 4 grades each take during practice, so its summary is deterministic
+  // and shares Stage 0's layout (side-by-side comparison + redo).
+  if (STATE.selectedStage === 4 && STATE.recordings.some(r => r.stage === 4)) {
+    endStage4Session();
+    return;
+  }
+
   showScreen("screen-end");
   $("results-list").innerHTML = "";
   $("end-summary").textContent =
     `${STATE.recordings.length} question${STATE.recordings.length !== 1 ? "s" : ""} recorded.`;
   runTranscriptionFlow();
+}
+
+// ═══════════════════════════════════════════════════
+// STAGE 4 — DETERMINISTIC SESSION SUMMARY (no AI calls)
+// Same layout as Stage 0. The Band 5 sample answers a different question, so it
+// is labelled as a quality reference rather than a model answer.
+// ═══════════════════════════════════════════════════
+
+async function endStage4Session() {
+  releaseMic();
+  clearInterval(STATE.timerInterval);
+  showScreen("screen-end");
+
+  const recs   = STATE.recordings.filter(r => r.stage === 4 && !r._redoOf);
+  const banded = recs.filter(r => typeof r.band === "number");
+  const avg    = banded.length
+    ? (banded.reduce((sum, r) => sum + r.band, 0) / banded.length).toFixed(1)
+    : "—";
+
+  const heading = document.querySelector("#screen-end .results-top-bar h2");
+  if (heading) heading.textContent = "Full Answer — Practice Summary";
+
+  const statusEl = $("transcription-status");
+  statusEl.classList.remove("hidden");
+  statusEl.textContent = "Saving to your records…";
+  $("end-summary").textContent =
+    recs.length + " question" + (recs.length !== 1 ? "s" : "") + " attempted" +
+    " · Average band: " + avg +
+    (banded.length && banded.length < recs.length
+      ? " (" + banded.length + " of " + recs.length + " scored)"
+      : "");
+
+  const list = $("results-list");
+  list.innerHTML = "";
+  recs.forEach((r) => { list.appendChild(stage0ResultCard(r, 0)); });
+  try { translateStaticEls("#results-list"); } catch (e) {}
+
+  const transcripts = {};
+  recs.forEach((r, i) => { transcripts[i] = r.transcript || ""; });
+  await autoDownload(transcripts);
+  await exportStage0Doc(recs);
+  statusEl.textContent = "✓ Saved to your records.";
 }
 
 // ═══════════════════════════════════════════════════
@@ -2401,6 +2665,10 @@ let STAGE0_LANG       = "native";   // Stage 0 language mode; resets to native p
 let STAGE0_CURRENT    = null;
 let STAGE0_BLOB       = null;
 let STAGE0_TRANSCRIPT = "";
+// Module-level so re-binding the record button can clear a stale interval and
+// so the stop path can't run twice (timer tick + manual click).
+let STAGE0_TIMER      = null;
+let STAGE0_STOPPING   = false;
 
 async function loadStage0List() {
   try {
@@ -2448,13 +2716,6 @@ function stage0IsEnglish() {
   return STAGE0_LANG === "en" || !lang || lang.toLowerCase() === "english";
 }
 
-function renderStage0Structure(el) {
-  if (!el) return;
-  const en = el.dataset.en || "";
-  if (stage0IsEnglish()) el.innerHTML = escapeHTML(en).replace(/\n/g, "<br>");
-  else translateUI(en, el, true);
-}
-
 function renderStage0Full(el) {
   if (!el) return;
   const en = el.dataset.en || "";
@@ -2486,7 +2747,6 @@ function setStage0Lang(lang) {
   STAGE0_LANG = (lang === "en") ? "en" : "native";
   renderStage0Question();
   [1, 2, 3].forEach(i => {
-    renderStage0Structure($(`stage0-structure-${i}`));
     renderStage0Full($(`stage0-full-${i}`));
   });
   updateStage0LangToggle();
@@ -2537,9 +2797,10 @@ async function loadStage0Sample(sample, itemEl) {
     [3, blocks.after_example],
   ];
   pairs.forEach(([i, b]) => {
-    $(`stage0-structure-${i}`).dataset.en = b ? (b.structure || "") : "";
-    $(`stage0-full-${i}`).dataset.en      = b ? (b.full || "")      : "";
-    renderStage0Structure($(`stage0-structure-${i}`));
+    // The "Answer Structure" column was removed — the full sentence already
+    // demonstrates the answer structure, and the Idea Spine column carries the
+    // generated logic frame. blocks.*.structure is left unused.
+    $(`stage0-full-${i}`).dataset.en = b ? (b.full || "") : "";
     renderStage0Full($(`stage0-full-${i}`));
   });
   updateStage0LangToggle();
@@ -2558,8 +2819,9 @@ async function loadStage0Sample(sample, itemEl) {
   $("stage0-table-area").classList.remove("hidden");
 
 
-  // Reset toggle to ON state
-  $("toggle-stage0-full").checked = true;
+  // New sample always starts with the sample answer visible. The checkbox is
+  // inverted (checked = hidden), so it resets to UNchecked.
+  $("toggle-stage0-full").checked = false;
   setStage0FullVisible(true);
 
   // Reset record button to pulse state
@@ -2569,9 +2831,20 @@ async function loadStage0Sample(sample, itemEl) {
   $("stage0-post-record").classList.add("hidden");
   $("stage0-timer-box").classList.add("hidden");
   $("stage0-results-area").classList.add("hidden");
-  $("stage0-feedback-text").classList.add("hidden");
+  $("stage0-analysis-block").classList.add("hidden");
+  $("stage0-gap-block").classList.add("hidden");
   STAGE0_BLOB = null;
   STAGE0_TRANSCRIPT = "";
+
+  // Clear any idea spine generated for the previous sample.
+  for (let i = 1; i <= 3; i++) {
+    const cell = $("stage0-spine-" + i);
+    if (cell) cell.textContent = "";
+  }
+  const ideaStatus = $("s0-idea-status");
+  if (ideaStatus) ideaStatus.textContent = "";
+  const ideaSel = $("s0-idea-reason-select");
+  if (ideaSel) ideaSel.value = "";
 
   stage0BindRecordButton();
 }
@@ -2601,23 +2874,33 @@ function highlightPhrases(text, phrases) {
 
 function setStage0FullVisible(show) {
   document.querySelectorAll(".stage0-full").forEach(el => el.style.visibility = show ? "" : "hidden");
-  $("stage0-full-header").style.visibility = show ? "" : "hidden";
+  // Hide only the column's label — NOT the whole <th>, because the toggle now
+  // lives inside that header cell and must stay clickable so the student can
+  // turn the sample back on mid-practice.
+  const hdrLabel = $("stage0-full-header-label");
+  if (hdrLabel) hdrLabel.style.visibility = show ? "" : "hidden";
   const label = $("stage0-full-toggle-label");
-  if (label) {
-    label.style.borderColor = show ? "#00736b" : "#c0392b";
-    label.style.background  = show ? "#e8f5f4"  : "#fdecea";
-    label.style.color       = show ? "#00736b" : "#c0392b";
-  }
-  const icon = $("stage0-toggle-icon");
-  if (icon) icon.textContent = show ? "👁" : "🙈";
+  if (label) label.style.color = show ? "#00736b" : "#c0392b";
+
+  // The label flips between two phrases, so update data-tr and re-translate
+  // rather than writing textContent directly (which would clobber the
+  // translated string and revert the label to English).
   const text = $("stage0-toggle-text");
-  if (text) text.textContent = show ? "Full sentences: ON" : "Full sentences: OFF";
-  $("toggle-stage0-full").checked = show;
+  if (text) {
+    const en = show ? "Hide sample" : "Show sample";
+    text.setAttribute("data-tr", en);
+    if (stage0IsEnglish()) text.textContent = en;
+    else translateUI(en, text, false);
+  }
+
+  // NOTE: the checkbox is inverted — CHECKED means the sample is HIDDEN.
+  $("toggle-stage0-full").checked = !show;
 }
 
-// Toggle: show/hide full sentences (works before and during recording)
+// Checkbox: tick to hide the sample answer. Default is unticked (sample shown).
+// Works before and during recording.
 $("toggle-stage0-full").onchange = () => {
-  setStage0FullVisible($("toggle-stage0-full").checked);
+  setStage0FullVisible(!$("toggle-stage0-full").checked);
 };
 
 // Stage 0 native ⇄ English language switch
@@ -2632,17 +2915,30 @@ $("toggle-stage0-full").onchange = () => {
 
 function stage0BindRecordButton() {
   const btn = $("btn-stage0-record");
-  let timerInterval = null;
   const STAGE0_TIME = 45;
 
+  // Any interval left over from a previous binding (switching samples, or
+  // pressing Record Again) must die, or its tick keeps running against the
+  // new state and fires autoStop a second time.
+  if (STAGE0_TIMER) { clearInterval(STAGE0_TIMER); STAGE0_TIMER = null; }
+  STAGE0_STOPPING = false;
+
   const autoStop = async () => {
-    clearInterval(timerInterval);
+    // Reentrancy guard: the countdown tick and a manual click can both land
+    // here. A second run would find the recorder already stopped, briefly
+    // render "(transcription failed)", then be overwritten by the first run.
+    if (STAGE0_STOPPING) return;
+    STAGE0_STOPPING = true;
+
+    if (STAGE0_TIMER) { clearInterval(STAGE0_TIMER); STAGE0_TIMER = null; }
     $("stage0-timer-box").classList.add("hidden");
     btn.classList.remove("recording");
     btn.classList.add("hidden");
     const blob = await stopRecording();
     STAGE0_BLOB = blob;
     $("stage0-post-record").classList.remove("hidden");
+    // Immediate auto-grading: transcribe -> band -> gap analysis, no button press.
+    await stage0ProcessRecording();
   };
 
   btn.onclick = async () => {
@@ -2653,20 +2949,21 @@ function stage0BindRecordButton() {
 
       btn.classList.remove("pulse");
       btn.classList.add("recording");
+      STAGE0_STOPPING = false;
       startRecording();
 
       // Pause question audio
       $("stage0-audio-player").pause();
 
-      // Auto-hide full sentences
-      setStage0FullVisible(false);
+      // Sample text stays in whatever state the student chose. If they want to
+      // practise without it, they hide it BEFORE recording.
 
       // 45 s countdown
       let remaining = STAGE0_TIME;
       $("stage0-timer-digits").textContent = "00:45";
       $("stage0-timer-value").classList.remove("danger");
       $("stage0-timer-box").classList.remove("hidden");
-      timerInterval = setInterval(async () => {
+      STAGE0_TIMER = setInterval(async () => {
         remaining--;
         const m = Math.floor(remaining / 60).toString().padStart(2, "0");
         const s = (remaining % 60).toString().padStart(2, "0");
@@ -2684,12 +2981,14 @@ function stage0BindRecordButton() {
 
 $("btn-stage0-record-again").onclick = async () => {
   STAGE0_BLOB = null;
+  STAGE0_TRANSCRIPT = "";
   $("stage0-post-record").classList.add("hidden");
   $("stage0-results-area").classList.add("hidden");
-  $("stage0-feedback-text").classList.add("hidden");
+  $("stage0-analysis-block").classList.add("hidden");
+  $("stage0-gap-block").classList.add("hidden");
 
-  // Restore full sentences and reset toggle pill
-  setStage0FullVisible(true);
+  // NOTE: the full-sentence toggle is deliberately NOT reset here. Whatever the
+  // student chose persists across attempts until they change it themselves.
 
   // Reset record button and re-bind
   const btn = $("btn-stage0-record");
@@ -2698,16 +2997,36 @@ $("btn-stage0-record-again").onclick = async () => {
   stage0BindRecordButton();
 };
 
-$("btn-stage0-save").onclick = async () => {
-  if (!STAGE0_BLOB) return;
-  $("btn-stage0-save").disabled = true;
-  $("btn-stage0-save").textContent = "Transcribing...";
+// ═══════════════════════════════════════════════════
+// STAGE 0 — IMMEDIATE AUTO-GRADING
+// Runs automatically when a recording stops. No button press.
+//   1. transcribe   -> /.netlify/functions/transcribe
+//   2. band + feedback -> /.netlify/functions/analyze
+//   3. gap analysis (only when band < 5) -> /.netlify/functions/why-not-5-speaking
+// Band, feedback and gap text are stored on the STATE.recordings entry so the
+// End Session summary can replay them with no further API calls.
+// ═══════════════════════════════════════════════════
 
-  const url = URL.createObjectURL(STAGE0_BLOB);
-  $("stage0-playback").src = url;
+function stage0GoldenSample() {
+  const b = (STAGE0_CURRENT && STAGE0_CURRENT.blocks) || {};
+  return [
+    b.statement_reason && b.statement_reason.full,
+    b.before_example   && b.before_example.full,
+    b.after_example    && b.after_example.full
+  ].filter(Boolean).join(" ");
+}
+
+async function stage0ProcessRecording() {
+  if (!STAGE0_BLOB) return;
+
+  $("stage0-playback").src = URL.createObjectURL(STAGE0_BLOB);
   $("stage0-results-area").classList.remove("hidden");
   $("stage0-transcript-text").textContent = "Transcribing...";
+  $("stage0-transcript-label").textContent = "Transcript";
+  $("stage0-analysis-block").classList.add("hidden");
+  $("stage0-gap-block").classList.add("hidden");
 
+  // ── 1. Transcribe ────────────────────────────────
   try {
     const audio_base64 = await blobToBase64(STAGE0_BLOB);
     const res = await fetch("/.netlify/functions/transcribe", {
@@ -2716,94 +3035,553 @@ $("btn-stage0-save").onclick = async () => {
       body: JSON.stringify({ audio_base64, filename: "stage0.webm" })
     });
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Transcription failed");
     STAGE0_TRANSCRIPT = normalizeTranscript(data.transcript || "");
-    const words = countWords(STAGE0_TRANSCRIPT);
-    $("stage0-transcript-text").textContent = STAGE0_TRANSCRIPT || "(no speech detected)";
-    $("stage0-transcript-label").textContent = "Transcript — " + words + " words";
-
-    // Add to STATE.recordings so it's included in the end-session CSV + audio export
-    const sampleId = STAGE0_CURRENT ? (STAGE0_CURRENT.id || "s0") : "s0";
-    const fname    = getRunLabel(sampleId, 0, "q1") + ".webm";  // e.g. s0_001_stage0_q1.webm
-    // Replace any previous recording for the same sample (re-record scenario)
-    const existing = STATE.recordings.findIndex(r => r.stage === 0 && r.question_id === sampleId);
-    const entry = {
-      stage: 0, question_id: sampleId,
-      q: STAGE0_CURRENT ? (STAGE0_CURRENT.question || "") : "",
-      audio: "", blob: STAGE0_BLOB, filename: fname,
-      set_label: "Stage 0", test_id: "stage0", question_index: 1,
-      transcript: STAGE0_TRANSCRIPT
-    };
-    if (existing >= 0) STATE.recordings[existing] = entry;
-    else               STATE.recordings.push(entry);
-
-  } catch(e) {
+  } catch (e) {
+    console.error("Stage 0 transcription failed:", e.message);
     $("stage0-transcript-text").textContent = "(transcription failed)";
+    return;
   }
 
-  $("btn-stage0-save").disabled = false;
-  $("btn-stage0-save").textContent = "Save & Get Transcript";
-};
+  const words = countWords(STAGE0_TRANSCRIPT);
+  $("stage0-transcript-text").textContent  = STAGE0_TRANSCRIPT || "(no speech detected)";
+  $("stage0-transcript-label").textContent = "Transcript — " + words + " words";
 
-$("btn-stage0-feedback").onclick = async () => {
-  if (!STAGE0_TRANSCRIPT || !STAGE0_CURRENT) return;
-  $("btn-stage0-feedback").disabled = true;
-  $("btn-stage0-feedback").textContent = "Checking...";
+  // Upsert into STATE.recordings (keyed on sample id — re-recording a sample
+  // replaces the previous attempt).
+  const sampleId = STAGE0_CURRENT ? (STAGE0_CURRENT.id || "s0") : "s0";
+  const entry = {
+    stage: 0,
+    question_id: sampleId,
+    q: STAGE0_CURRENT ? (STAGE0_CURRENT.question || "") : "",
+    audio: "",
+    blob: STAGE0_BLOB,
+    filename: getRunLabel(sampleId, 0, "q1") + ".webm",
+    set_label: "Stage 0",
+    test_id: "stage0",
+    question_index: 1,
+    transcript: STAGE0_TRANSCRIPT,
+    band: null,
+    feedback: "",
+    gap: "",
+    sample: stage0GoldenSample()
+  };
+  const existing = STATE.recordings.findIndex(r => r.stage === 0 && r.question_id === sampleId);
+  if (existing >= 0) STATE.recordings[existing] = entry;
+  else               STATE.recordings.push(entry);
 
-  const blocks = STAGE0_CURRENT.blocks || {};
-  const modelAnswer = [
-    blocks.statement_reason ? blocks.statement_reason.full : "",
-    blocks.before_example   ? blocks.before_example.full   : "",
-    blocks.after_example    ? blocks.after_example.full    : ""
-  ].filter(Boolean).join(" ");
+  if (!STAGE0_TRANSCRIPT.trim()) return;   // nothing to score
 
+  // ── 2. Band + feedback ───────────────────────────
+  const block = $("stage0-analysis-block");
+  block.innerHTML = '<div class="analysis-feedback">Scoring…</div>';
+  block.classList.remove("hidden");
+
+  let band = null;
   try {
-    const res = await fetch("/.netlify/functions/stage0-feedback", {
+    const res = await fetch("/.netlify/functions/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model_answer: modelAnswer, transcript: STAGE0_TRANSCRIPT, language: analysisLang() })
+      body: JSON.stringify({
+        questions: [{ question: entry.q, transcript: STAGE0_TRANSCRIPT }],
+        language: analysisLang(),
+        // Stage 0 shows only the band here — the comparison below carries all the
+        // written feedback, so full criterion output would just repeat it longer.
+        mode: "band_only"
+      })
     });
     const data = await res.json();
-    const feedbackEl = $("stage0-feedback-text");
-    feedbackEl.innerHTML =
-      "<div class=\"result-transcript-label\">Similarity Check</div>" +
-      "<div style=\"margin-top:6px;font-size:12px;color:#555;\">Model: " + (data.model_words || "?") + " words &nbsp;·&nbsp; Yours: " + (data.student_words || "?") + " words</div>" +
-      "<div class=\"analysis-feedback\" style=\"margin-top:6px;\">" + (data.feedback || "").split("\n").join("<br>") + "</div>";
-    feedbackEl.classList.remove("hidden");
+    if (!res.ok) throw new Error(data.error || "Analysis failed");
 
-    // Capture similarity result and upload to Drive
-    const sampleId   = STAGE0_CURRENT ? (STAGE0_CURRENT.id || "s0") : "s0";
-    const _dt2 = new Date(); const date = _dt2.toISOString().slice(0, 10).replace(/-/g, "") + "_" + _dt2.toTimeString().slice(0, 8).replace(/:/g, "");
-    const keyPrefix  = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
-    const simLines   = [
-      `Stage 0 Similarity Check — ${sampleId} — ${date}`,
-      `Model words: ${data.model_words || "?"}  |  Your words: ${data.student_words || "?"}`,
-      `Transcript: ${STAGE0_TRANSCRIPT || ""}`,
-      "",
-      data.feedback || ""
-    ];
-    const simFilename = `${keyPrefix}_interview_stage0_${sampleId}_${date}_similarity.txt`;
-    uploadToDrive(simFilename, simLines.join("\n"), "text/plain", keyPrefix);
+    const result = (data.parsed || {}).Q1;
+    if (!result) {
+      // Log what the model actually returned so a format drift is diagnosable.
+      console.error("Stage 0: could not parse a band. Raw response:", data.raw);
+      throw new Error("No result returned for this response");
+    }
 
-  } catch(e) {
-    $("stage0-feedback-text").innerHTML = "<div class=\"analysis-error\">Similarity check failed. Please try again.</div>";
-    $("stage0-feedback-text").classList.remove("hidden");
+    band           = result.band;
+    entry.band     = result.band;
+    entry.feedback = result.feedback || "";
+
+    block.innerHTML =
+      (result.band !== null
+        ? '<div class="analysis-band">Band ' + result.band + ' · ' + words + ' words</div>'
+        : '<div class="analysis-error">Could not score this response.</div>');
+  } catch (e) {
+    console.error("Stage 0 analysis failed:", e.message);
+    block.innerHTML = '<div class="analysis-error">Scoring failed. Please try again.</div>';
+    return;
   }
 
-  $("btn-stage0-feedback").disabled = false;
-  $("btn-stage0-feedback").textContent = "Similarity Check";
-};
+  // ── 3. Gap analysis — only when the band is below 5 ──
+  const sample = stage0GoldenSample();
+  if (typeof band !== "number" || band >= 5 || !sample) return;
+
+  const gapBlock = $("stage0-gap-block");
+  gapBlock.innerHTML = '<div class="analysis-feedback">Comparing with a strong answer…</div>';
+  gapBlock.classList.remove("hidden");
+
+  try {
+    const res = await fetch("/.netlify/functions/why-not-5-speaking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question: entry.q,
+        answer:   STAGE0_TRANSCRIPT,
+        sample:   sample,
+        band:     band,
+        language: analysisLang()
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Gap analysis failed");
+
+    entry.gap = data.explanation || "";
+    gapBlock.innerHTML =
+      '<div class="result-transcript-label">Compared with a strong answer</div>' +
+      '<div class="analysis-feedback" style="margin-top:6px;">' +
+        (entry.gap)
+          .split("\n")
+          .filter(l => l.trim())
+          .map(l => '<div class="analysis-feedback-line">' + escapeHTML(l) + '</div>')
+          .join("") +
+      '</div>';
+  } catch (e) {
+    console.error("Stage 0 gap analysis failed:", e.message);
+    gapBlock.innerHTML = '<div class="analysis-error">Could not compare with a strong answer.</div>';
+  }
+}
 
 $("btn-end-stage0").onclick = () => {
   if (STATE.recordings.some(r => r.stage === 0)) {
-    // Has saved stage 0 recordings — go through normal end-session flow (downloads CSV + audio)
-    STATE._endCalled = false;
-    triggerEndSession();
+    // Stage 0 is already graded per-recording, so the summary is deterministic:
+    // no transcription pass, no analysis call. Just replay what we stored.
+    endStage0Session();
   } else {
     // Nothing saved — just return to start
     releaseMic();
     showScreen("screen-start");
   }
 };
+
+// ═══════════════════════════════════════════════════
+// STAGE 0 — DETERMINISTIC SESSION SUMMARY (no AI calls)
+// ═══════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════
+// STAGE 0 — GOOGLE DOC REPORT
+// Mirrors the on-screen summary exactly: band, feedback, gap analysis and the
+// 5-point benchmark. Reads only what auto-grading already stored on each
+// recording, so there are no API calls beyond the upload itself.
+// ═══════════════════════════════════════════════════
+
+async function exportStage0Doc(recs, suffix) {
+  if (!recs || !recs.length) return;
+  const studentKey = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
+
+  const banded = recs.filter(r => typeof r.band === "number");
+  const avg = banded.length
+    ? (banded.reduce((sum, r) => sum + r.band, 0) / banded.length).toFixed(1)
+    : "N/A";
+
+  const nl2br = (t) => (t || "").split("\n").filter(l => l.trim()).map(escapeHTML).join("<br>");
+
+  const rowsHtml = recs.map((r) => {
+    const words    = countWords(r.transcript || "");
+    const yourUrl  = r.driveLink || "";
+    const yourLink = yourUrl
+      ? `<a href="${escapeHTML(yourUrl)}">▶ Play your recording</a>`
+      : `<span style="color:#999">Your recording unavailable</span>`;
+
+    const header = `<h2 style="color:#00736b;font-size:16px">Stage 0 — ${escapeHTML(r.question_id || "")}</h2>`;
+    const question = r.q ? `<p><strong>Question:</strong> ${escapeHTML(r.q)}</p>` : "";
+    const links = `<p>${yourLink}</p>`;
+
+    const bandLine = (typeof r.band === "number")
+      ? `<p><strong>Band ${r.band} &middot; ${words} words</strong></p>`
+      : `<p><strong>(not scored)</strong></p>`;
+
+    const gap = nl2br(r.gap);
+    // Google Docs discards most CSS on import but keeps table borders and cell
+    // shading, so a one-cell table is the only reliable way to box content.
+    const boxed = (title, inner, bg) =>
+      `<table style="width:100%;border-collapse:collapse;margin:8px 0;">` +
+        `<tr><td style="border:1px solid #dddddd;background-color:${bg};padding:8px 10px;">` +
+          `<strong>${title}</strong><br>${inner}` +
+        `</td></tr>` +
+      `</table>`;
+
+    // Band 5: no gap, no benchmark — matches the on-screen summary.
+    const showSample = !!(r.sample && r.band !== 5);
+
+    const answerInner =
+      `<strong>Your answer — ${words} words</strong><br>` +
+      escapeHTML(r.transcript || "(no speech detected)");
+
+    const sampleInner = showSample
+      ? `<strong>5-point sample answer benchmark — ${countWords(r.sample)} words</strong><br>` +
+        `<span style="color:#444444">${escapeHTML(r.sample)}</span>`
+      : "";
+
+    // Side by side when there is something to compare against, mirroring the
+    // results page; otherwise one full-width cell.
+    const cell = (inner, bg, width) =>
+      `<td style="width:${width};border:1px solid #dddddd;background-color:${bg};` +
+      `padding:8px 10px;vertical-align:top;">${inner}</td>`;
+
+    const transcript =
+      `<table style="width:100%;border-collapse:collapse;margin:8px 0;table-layout:fixed;"><tr>` +
+        cell(answerInner, "#ffffff", showSample ? "50%" : "100%") +
+        (showSample ? cell(sampleInner, "#fafafa", "50%") : "") +
+      `</tr></table>`;
+
+    const gapBlock = gap
+      ? boxed("Compared with the 5-point sample", gap, "#f7f3fa")
+      : "";
+
+
+    // Order mirrors the results page: question -> audio -> comparison table
+    // -> band -> gap analysis.
+    return header + question + links + transcript + bandLine + gapBlock + "<hr>";
+  }).join("");
+
+  const isRedo = !!suffix;
+  const summary = isRedo
+    ? ""
+    : `<p style="font-size:20px;font-weight:700;color:#00736b">` +
+      `Average Score: ${avg} / 5 (${banded.length} of ${recs.length} scored)</p>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="font-family:Arial,sans-serif">
+      <h1>${isRedo ? "Stage 0 — Redo" : "Stage 0 — Practice Summary"}</h1>
+      <p>Generated ${escapeHTML(new Date().toLocaleString())}</p>
+      ${summary}${rowsHtml}
+    </body></html>`;
+
+  const docName = `${sessionBaseName()}_stage0_report${suffix || ""}`;
+  try {
+    await uploadToDrive(
+      docName, html, "text/html", studentKey,
+      false,
+      "application/vnd.google-apps.document",
+      "04_speaking_interview"
+    );
+  } catch (e) {
+    console.warn("Stage 0 report upload failed:", e.message);
+  }
+}
+
+
+// Build one Stage 0 result card. Used for the original attempt and for every
+// redo, so a redo looks identical to a first attempt. `attempt` is 0 for the
+// original, 1+ for redos.
+function stage0ResultCard(r, attempt) {
+  const card = document.createElement("div");
+  card.className = "result-item";
+
+  const headBits = ["Stage 0"];
+  if (r.question_id) headBits.push(escapeHTML(r.question_id));
+  if (attempt) headBits.push("Redo " + attempt);
+
+  const lines = (t) => (t || "")
+    .split("\n").filter(l => l.trim())
+    .map(l => '<div class="analysis-feedback-line">' + escapeHTML(l) + '</div>')
+    .join("");
+
+  const gapHtml = lines(r.gap);
+
+  // Band 5 needs no comparison: there is no gap analysis, and showing the
+  // benchmark beside a top-band answer adds nothing. Those rows collapse to a
+  // single full-width column. Gate on the band itself rather than on whether
+  // a sample happens to be stored, so entries graded before this rule still
+  // render correctly.
+  const isTopBand     = (r.band === 5);
+  const hasComparison = !isTopBand && !!(gapHtml || r.sample);
+
+  const bandHtml = (typeof r.band === "number")
+    ? '<div class="analysis-band">Band ' + r.band + ' · ' +
+      countWords(r.transcript || "") + ' words</div>'
+    : '<div class="analysis-feedback-line" data-tr="(not scored)">(not scored)</div>';
+
+  const answerCell =
+    '<div class="result-transcript-label">' +
+      '<span data-tr="Your answer">Your answer</span> — ' +
+      countWords(r.transcript || "") + ' words</div>' +
+    '<div class="result-transcript-text">' +
+      escapeHTML(r.transcript || "(no speech detected)") + '</div>';
+
+  const sampleCell = r.sample
+    ? '<div class="result-transcript-label">' +
+        (r.stage === 4
+          ? '<span data-tr="Band 5 sample answer (a different question)">Band 5 sample answer (a different question)</span> — '
+          : '<span data-tr="5-point sample answer benchmark">5-point sample answer benchmark</span> — ') +
+        countWords(r.sample) + ' words</div>' +
+      (r.sample_q
+        ? '<div class="practice-sample-q">' +
+            '<span data-tr="It answers:">It answers:</span> ' + escapeHTML(r.sample_q) + '</div>'
+        : "") +
+      '<div class="result-transcript-text" style="color:#444;">' +
+        escapeHTML(r.sample) + '</div>'
+    : "";
+
+  const compareCell = gapHtml
+    ? (r.stage === 4
+        ? '<div class="result-transcript-label" style="margin-top:10px;" data-tr="Compared with a Band 5 answer">Compared with a Band 5 answer</div>'
+        : '<div class="result-transcript-label" style="margin-top:10px;" data-tr="Compared with the 5-point sample">Compared with the 5-point sample</div>') +
+      '<div class="analysis-feedback" style="margin-top:6px;">' + gapHtml + '</div>'
+    : "";
+
+  const grid = hasComparison
+    ? '<table class="stage0-compare"><tbody><tr>' +
+        '<td class="cmp-left">'  + answerCell + '</td>' +
+        '<td class="cmp-right">' + sampleCell + '</td>' +
+      '</tr></tbody></table>' +
+      '<div class="result-analysis-block">' + bandHtml + compareCell + '</div>'
+    : '<div class="result-transcript-block">' + answerCell + '</div>' +
+      '<div class="result-analysis-block">'   + bandHtml + '</div>';
+
+  card.innerHTML =
+    '<div class="result-num">' + headBits.join(" — ") + '</div>' +
+    '<p class="result-q">' + escapeHTML(r.q || "") + '</p>' +
+    '<div class="result-audio-block">' +
+      '<div class="result-audio-label" data-tr="Your Recording">Your Recording</div>' +
+      '<audio controls src="' + URL.createObjectURL(r.blob) + '"></audio>' +
+    '</div>' +
+    grid;
+
+
+  // Below Band 5 the student can record this question again, as often as they
+  // like. Each redo appends a new card beneath this one.
+  if (typeof r.band === "number" && r.band !== 5) {
+    const redo = document.createElement("div");
+    redo.className = "stage0-redo";
+    redo.innerHTML =
+      '<div class="stage0-redo-title" data-tr="Try this question again">Try this question again</div>' +
+      '<div class="stage0-redo-desc" data-tr="Re-record your answer and compare it with the 5-point sample again. You have 45 seconds.">' +
+        'Re-record your answer and compare it with the 5-point sample again. You have 45 seconds.</div>' +
+      '<button type="button" class="btn-record pulse stage0-redo-btn"><div class="record-dot"></div></button>' +
+      '<div class="stage0-redo-timer hidden"><span class="stage0-redo-digits">00:45</span></div>' +
+      '<div class="stage0-redo-status"></div>';
+    card.appendChild(redo);
+    redo.querySelector(".stage0-redo-btn").onclick = () => stage0RunRedo(r, attempt, card);
+  }
+
+  return card;
+}
+
+// ═══════════════════════════════════════════════════
+// STAGE 0 — REDO FROM THE RESULTS PAGE
+// Below Band 5 a student can re-record the same question as many times as they
+// like. Each redo runs the same chain as a first attempt (transcribe -> band ->
+// gap analysis), appends its own card, and uploads its own report.
+// ═══════════════════════════════════════════════════
+
+async function stage0RunRedo(orig, attempt, card) {
+  const redoBox = card.querySelector(".stage0-redo");
+  const btn     = redoBox.querySelector(".stage0-redo-btn");
+  const timer   = redoBox.querySelector(".stage0-redo-timer");
+  const digits  = redoBox.querySelector(".stage0-redo-digits");
+  const status  = redoBox.querySelector(".stage0-redo-status");
+
+  // Already recording -> stop early.
+  if (btn.classList.contains("recording")) { redoBox._stop && redoBox._stop(); return; }
+
+  // The mic is released when the session ends, so re-acquire it here. This can
+  // re-prompt for permission if the browser has since forgotten it.
+  status.textContent = "";
+  const ok = await ensureMic();
+  if (!ok) { status.textContent = "Microphone unavailable. Please allow access and try again."; return; }
+
+  btn.classList.remove("pulse");
+  btn.classList.add("recording");
+  timer.classList.remove("hidden");
+  startRecording();
+
+  let remaining = 45;
+  digits.textContent = "00:45";
+  let stopped = false;
+
+  const finish = async () => {
+    if (stopped) return;              // guard: timer and click can both fire
+    stopped = true;
+    clearInterval(iv);
+    timer.classList.add("hidden");
+    btn.classList.remove("recording");
+    btn.classList.add("hidden");
+
+    const blob = await stopRecording();
+    status.textContent = "Transcribing…";
+
+    // ── Transcribe ──
+    let transcript = "";
+    try {
+      const audio_base64 = await blobToBase64(blob);
+      const res = await fetch("/.netlify/functions/transcribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio_base64, filename: "stage0_redo.webm" })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Transcription failed");
+      transcript = normalizeTranscript(data.transcript || "");
+    } catch (e) {
+      console.error("Stage 0 redo transcription failed:", e.message);
+      status.textContent = "Transcription failed. Please try again.";
+      btn.classList.remove("hidden");
+      btn.classList.add("pulse");
+      return;
+    }
+
+    const redo = {
+      stage: orig.stage,
+      question_id: orig.question_id,
+      q: orig.q,
+      blob: blob,
+      filename: getRunLabel(orig.question_id || "s0", 0, "redo" + (attempt + 1)) + ".webm",
+      set_label: "Stage 0", test_id: "stage0", question_index: 1,
+      transcript: transcript,
+      band: null, feedback: "", gap: "",
+      sample: orig.sample,
+      sample_q: orig.sample_q,
+      _redoOf: orig.question_id,
+      _attempt: attempt + 1
+    };
+
+    // ── Band ──
+    if (transcript.trim()) {
+      status.textContent = "Scoring…";
+      try {
+        const res = await fetch("/.netlify/functions/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            questions: [{ question: redo.q, transcript: transcript }],
+            language: analysisLang(),
+            mode: "band_only"
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Analysis failed");
+        const result = (data.parsed || {}).Q1;
+        if (!result) {
+          console.error("Stage 0 redo: could not parse a band. Raw:", data.raw);
+        } else {
+          redo.band = result.band;
+        }
+      } catch (e) {
+        console.error("Stage 0 redo analysis failed:", e.message);
+      }
+
+      // ── Gap analysis (below Band 5 only) ──
+      if (typeof redo.band === "number" && redo.band < 5 && redo.sample) {
+        status.textContent = "Comparing with the 5-point sample…";
+        try {
+          const res = await fetch("/.netlify/functions/why-not-5-speaking", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              question: redo.q, answer: transcript, sample: redo.sample,
+              band: redo.band, language: analysisLang(),
+              // Stage 4's sample answers a different question; Stage 0's does not.
+              same_topic: (orig.stage !== 4),
+              sample_question: orig.sample_q || ""
+            })
+          });
+          const data = await res.json();
+          if (res.ok) redo.gap = data.explanation || "";
+        } catch (e) {
+          console.error("Stage 0 redo gap analysis failed:", e.message);
+        }
+      }
+    }
+
+    STATE.recordings.push(redo);
+
+    // Append the new card directly beneath this one, in the same format.
+    const next = stage0ResultCard(redo, attempt + 1);
+    card.insertAdjacentElement("afterend", next);
+    try { translateStaticEls("#results-list"); } catch (e) {}
+
+    // This attempt is finished — drop its redo box so each card offers one redo.
+    redoBox.remove();
+
+    // Upload the redo's own audio + report, best effort.
+    status.textContent = "";
+    try {
+      const keyPrefix = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
+      const b64 = await blobToBase64(blob);
+      const up = await uploadToDrive(redo.filename, b64, "audio/webm", keyPrefix, true,
+                                    undefined, "04_speaking_interview/audio_interview");
+      if (up && up.link) redo.driveLink = up.link;
+      await exportStage0Doc([redo], "_redo" + (attempt + 1));
+    } catch (e) {
+      console.warn("Stage 0 redo upload failed:", e.message);
+    }
+  };
+
+  redoBox._stop = finish;
+  btn.onclick = finish;
+
+  const iv = setInterval(() => {
+    remaining--;
+    const m = Math.floor(remaining / 60).toString().padStart(2, "0");
+    const sec = (remaining % 60).toString().padStart(2, "0");
+    digits.textContent = m + ":" + sec;
+    if (remaining <= 0) finish();
+  }, 1000);
+}
+
+async function endStage0Session() {
+  releaseMic();
+  clearInterval(STATE.timerInterval);
+  $("saving-modal").classList.add("hidden");
+  showScreen("screen-end");
+
+  // Redos are appended to STATE.recordings too, but the summary counts first
+  // attempts only so the average is not skewed by repeat practice.
+  const recs   = STATE.recordings.filter(r => r.stage === 0 && !r._redoOf);
+  const banded = recs.filter(r => typeof r.band === "number");
+  const avg    = banded.length
+    ? (banded.reduce((sum, r) => sum + r.band, 0) / banded.length).toFixed(1)
+    : "—";
+
+  // Different header from the AI analysis flow.
+  const heading = document.querySelector("#screen-end .results-top-bar h2");
+  if (heading) heading.textContent = "Stage 0 — Practice Summary";
+
+  // autoDownload + the report writes progress into this element, so keep it
+  // visible for the save phase rather than hiding it outright.
+  const statusEl = $("transcription-status");
+  statusEl.classList.remove("hidden");
+  statusEl.textContent = "Saving to your records…";
+  $("end-summary").textContent =
+    recs.length + " question" + (recs.length !== 1 ? "s" : "") + " attempted" +
+    " · Average band: " + avg +
+    (banded.length && banded.length < recs.length
+      ? " (" + banded.length + " of " + recs.length + " scored)"
+      : "");
+
+  const list = $("results-list");
+  list.innerHTML = "";
+
+  recs.forEach((r) => {
+    list.appendChild(stage0ResultCard(r, 0));
+  });
+
+  // The cards carry [data-tr] strings (the redo box), so translate them once
+  // they are in the DOM. Redo cards do the same when they are appended.
+  try { translateStaticEls("#results-list"); } catch (e) {}
+
+  // Same download + Drive upload the other stages get, using the transcripts
+  // we already have. One upload pass at End Session, not per recording.
+  // autoDownload populates r.driveLink, so the report must wait for it.
+  const transcripts = {};
+  recs.forEach((r, i) => { transcripts[i] = r.transcript || ""; });
+  await autoDownload(transcripts);
+  await exportStage0Doc(recs);
+  statusEl.textContent = "✓ Saved to your records.";
+}
 
 // ═══════════════════════════════════════════════════
 // INIT

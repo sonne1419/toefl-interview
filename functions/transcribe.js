@@ -56,7 +56,17 @@ exports.handler = async (event) => {
   const rawKeys = [rawPrimary, rawAlt];
   const apiKeys = [];
   for (const k of rawKeys) {
-    if (k && k.trim() && apiKeys.indexOf(k.trim()) === -1) apiKeys.push(k.trim());
+    const t = (k || "").trim();
+    if (!t || apiKeys.indexOf(t) !== -1) continue;
+    // Reject anything that isn't shaped like an OpenAI key. A corrupted env var
+    // (e.g. a Google JWT bleeding in) otherwise gets sent as a bearer token,
+    // which OpenAI answers by dropping the connection -> "socket hang up".
+    if (!t.startsWith("sk-")) {
+      console.warn("Ignoring malformed OpenAI key: length " + t.length +
+                   ", starts '" + t.slice(0, 4) + "'");
+      continue;
+    }
+    apiKeys.push(t);
   }
   if (!apiKeys.length) {
     return { statusCode: 500, body: JSON.stringify({ error: "No OpenAI API key set (OPENAI_API_KEY / ALT_OPENAI_KEY)" }) };
@@ -156,8 +166,10 @@ exports.handler = async (event) => {
       break;
     } catch (err) {
       lastErr = err;
-      // Only fall through to the next key on auth errors (401/403).
-      if (err.statusCode !== 401 && err.statusCode !== 403) break;
+      // Fall through to the next key on auth errors (401/403) AND on
+      // connection-level failures with no status (socket hang up / ECONNRESET),
+      // which is how a rejected credential often surfaces.
+      if (err.statusCode && err.statusCode !== 401 && err.statusCode !== 403) break;
     }
   }
 

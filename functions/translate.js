@@ -17,7 +17,7 @@ Rules:
 function callOpenAI(apiKey, systemPrompt, userContent, maxTokens) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user",   content: userContent  }
@@ -42,12 +42,20 @@ function callOpenAI(apiKey, systemPrompt, userContent, maxTokens) {
         res.on("data", chunk => _chunks.push(chunk));
         res.on("end", () => {
           const data = Buffer.concat(_chunks).toString("utf8");
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            let msg = data;
+            try { const j = JSON.parse(data); if (j.error) msg = j.error.message; } catch (e) {}
+            const err = new Error(`OpenAI ${res.statusCode}: ${msg}`);
+            err.statusCode = res.statusCode;
+            reject(err);
+            return;
+          }
           try {
             const json = JSON.parse(data);
             if (json.error) reject(new Error(json.error.message));
             else resolve(json.choices[0].message.content.trim());
           } catch(e) {
-            reject(new Error("Failed to parse GPT response"));
+            reject(new Error("Failed to parse GPT response: " + data.slice(0, 200)));
           }
         });
       }
@@ -63,10 +71,26 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const apiKey = process.env.ALT_OPENAI_KEY;
-  if (!apiKey) {
-    return { statusCode: 500, body: JSON.stringify({ error: "ALT_OPENAI_KEY not set" }) };
+  // Trim keys; prefer ALT_OPENAI_KEY (translation has always used it), fall back
+  // to OPENAI_API_KEY. Trimming guards against stray whitespace/newlines.
+  const _keys = [];
+  for (const k of [process.env.ALT_OPENAI_KEY, process.env.OPENAI_API_KEY]) {
+    const t = (k || "").trim();
+    if (!t || _keys.indexOf(t) !== -1) continue;
+    // Skip malformed keys (e.g. a JWT accidentally set in the env var) — sending
+    // one as a bearer token makes OpenAI drop the connection instead of 401ing,
+    // which would otherwise prevent falling back to the good key.
+    if (!t.startsWith("sk-")) {
+      console.warn("Ignoring malformed OpenAI key: length " + t.length +
+                   ", starts '" + t.slice(0, 4) + "'");
+      continue;
+    }
+    _keys.push(t);
   }
+  if (!_keys.length) {
+    return { statusCode: 500, body: JSON.stringify({ error: "No OpenAI API key set (ALT_OPENAI_KEY / OPENAI_API_KEY)" }) };
+  }
+  const apiKey = _keys[0];
 
   let body;
   try { body = JSON.parse(event.body); }

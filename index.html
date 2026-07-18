@@ -175,15 +175,25 @@
         </div>
         <!-- Expandable body -->
         <div id="stage0-instr-body" style="padding:0 16px 14px 16px;font-size:13.5px;line-height:1.7;color:#1a1a1a;">
-          <div style="margin-bottom:8px;" data-tr="This stage helps you become familiar with answer structures and common reasons by copying actual samples.">This stage helps you become familiar with answer structures and common reasons by copying actual samples.</div>
-          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
-            <div><strong data-tr="Step 1 — Read">Step 1 — Read</strong> <span data-tr="the question, answer structure, and full model answer below.">the question, answer structure, and full model answer below.</span></div>
-            <div><strong data-tr="Step 2 — Hide &amp; Record">Step 2 — Hide &amp; Record</strong> <span data-tr="when you feel ready. Press Full sentences: ON to hide them, then hit the record button. You have 45 seconds.">when you feel ready. Press <em>Full sentences: ON</em> to hide them, then hit the record button. You have 45 seconds.</span></div>
-            <div><strong data-tr="Step 3 — Compare">Step 3 — Compare</strong> <span data-tr="your transcript with the model answer when you're done.">your transcript with the model answer when you're done.</span></div>
+          <div style="margin-bottom:10px;" data-tr="Every sample below comes with a strong answer to the same question. You choose how closely to follow it. Pick whichever way suits you today — you can use a different one on the next question.">Every sample below comes with a strong answer to the same question. You choose how closely to follow it. Pick whichever way suits you today — you can use a different one on the next question.</div>
+
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+            <div><strong data-tr="Copy">Copy</strong> <span data-tr="— Read the sample until you can hold it in your head, tick Hide sample above the Sample Answer column, and say it back in your own voice.">— Read the sample until you can hold it in your head, tick <em>Hide sample</em> above the <em>Sample Answer</em> column, and say it back in your own voice.</span></div>
+            <div><strong data-tr="Translate">Translate</strong> <span data-tr="— Use the language switch above the table to show the sample in your own language. Read the meaning, then say it back in English without looking at the English text.">— Use the language switch above the table to show the sample in your own language. Read the meaning, then say it back in English without looking at the English text.</span></div>
+            <div><strong data-tr="Adapt">Adapt</strong> <span data-tr="— Pick a reason above the “Your Idea” column and press Help me with ideas. Keep the sample's shape, but speak about the new idea instead.">— Pick a reason above the <em>“Your Idea”</em> column and press <em>Help me with ideas</em>. Keep the sample's shape, but speak about the new idea instead.</span>
+            <div style="margin:6px 0 2px 18px;background:#faf5fc;border-left:3px solid #e0cdf0;border-radius:0;padding:8px 12px;">
+              <div style="font-weight:700;color:#8e44ad;margin-bottom:4px;" data-tr="About the “Your Idea” column">About the &ldquo;Your Idea&rdquo; column</div>
+              <div data-tr="This column shows a short idea, written as a few keywords joined by arrows, like: shop online → less stress → calm weekends. It is not a script. Each arrow is one step that you expand into a full spoken sentence, so a short line becomes several sentences of speech. The Sample Answer column never changes; your idea sits beside it as a different idea you can build the same shape around.">This column shows a short idea, written as a few keywords joined by arrows, like: <em>shop online &rarr; less stress &rarr; calm weekends</em>. It is not a script. Each arrow is one step that you expand into a full spoken sentence, so a short line becomes several sentences of speech. The <em>Sample Answer</em> column never changes; your idea sits beside it as a different idea you can build the same shape around.</div>
+            </div></div>
+            <div><strong data-tr="Create">Create</strong> <span data-tr="— Answer the question with your own content. Use the sample only as a reminder of how a full answer is built.">— Answer the question with your own content. Use the sample only as a reminder of how a full answer is built.</span></div>
           </div>
+
+          <div style="margin-bottom:8px;" data-tr="You have 45 seconds. Scoring starts on its own as soon as you stop — there is no button to press. You will get a band score with feedback, and when the band is below 5, a comparison showing what a strong answer does differently.">You have 45 seconds. Scoring starts on its own as soon as you stop — there is no button to press. You will get a band score with feedback, and when the band is below 5, a comparison showing what a strong answer does differently.</div>
+
           <div style="color:#555;font-size:12.5px;display:flex;flex-direction:column;gap:3px;">
-            <div data-tr="💡 Forgot something mid-recording? Turn the full sentences back on anytime.">💡 Forgot something mid-recording? Turn the full sentences back on anytime.</div>
-            <div data-tr="💡 Answer too long? Feel free to trim words to make it your own.">💡 Answer too long? Feel free to trim words to make it your own.</div>
+            <div data-tr="💡 The sample stays visible while you record unless you tick Hide sample first. You can untick it anytime.">💡 The sample stays visible while you record unless you tick Hide sample first. You can untick it anytime.</div>
+            <div data-tr="💡 The comparison always measures you against the sample, even when you wrote your own content. Treat it as a picture of what a top answer contains, not a list of things you got wrong.">💡 The comparison always measures you against the sample, even when you wrote your own content. Treat it as a picture of what a top answer contains, not a list of things you got wrong.</div>
+            <div data-tr="💡 Recording again replaces your previous attempt at this question.">💡 Recording again replaces your previous attempt at this question.</div>
           </div>
           <div style="margin-top:12px;">
             <button onclick="window.toggleStage0Instructions()" data-tr="Got it, let's start →" style="background:#00736b;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;">Got it, let's start →</button>
@@ -212,39 +222,66 @@
                 style="position:relative;z-index:1;flex:1;text-align:center;font-size:13px;font-weight:800;color:#00736b;pointer-events:none;">English</span>
             </div>
           </div>
-          <div style="display:inline-flex;align-items:center;gap:12px;">
-            <div style="font-size:12px;color:#888;">Model answer: <b id="stage0-word-count">—</b> words</div>
-            <label id="stage0-full-toggle-label" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:10px 18px;border-radius:12px;border:2.5px solid #00736b;background:#e8f5f4;font-size:15px;font-weight:700;color:#00736b;user-select:none;transition:background .2s,border-color .2s,color .2s;flex-shrink:0;">
-              <input type="checkbox" id="toggle-stage0-full" checked style="position:absolute;opacity:0;width:0;height:0;">
-              <span id="stage0-toggle-icon" style="font-size:18px;line-height:1;">👁</span>
-              <span id="stage0-toggle-text">Full sentences: ON</span>
-            </label>
-          </div>
+
         </div>
 
         <table class="stage0-table">
           <thead>
             <tr>
-              <th>Block</th>
-              <th>Answer Structure</th>
-              <th id="stage0-full-header">Full Sentence</th>
+              <th style="width:120px;" data-tr="Answer part">Block</th>
+              <th id="stage0-full-header" style="width:44%;vertical-align:top;">
+                <div id="stage0-full-header-label" data-tr="Sample Answer">Sample Answer</div>
+                <label id="stage0-full-toggle-label" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-top:6px;font-size:11px;font-weight:600;color:#00736b;user-select:none;white-space:nowrap;text-transform:none;letter-spacing:normal;">
+                  <input type="checkbox" id="toggle-stage0-full" style="cursor:pointer;margin:0;">
+                  <span id="stage0-toggle-text" data-tr="Hide sample">Hide sample</span>
+                </label>
+              </th>
+              <th style="width:40%;vertical-align:top;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                  <span data-tr="Your Idea">Your Idea</span>
+                  <button id="s0-btn-idea-fill" type="button"
+                    style="padding:4px 10px;border:1px solid #8e44ad;background:#faf5fc;color:#8e44ad;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;text-transform:none;letter-spacing:normal;flex-shrink:0;" data-tr="Help me with ideas">Help me with ideas</button>
+                </div>
+                <div style="margin-top:6px;">
+                  <select id="s0-idea-reason-select"
+                    style="width:100%;padding:4px 6px;border:1px solid #ccc;border-radius:6px;font-size:11px;text-transform:none;letter-spacing:normal;font-weight:400;">
+                    <option value="" data-tr="— Select a reason —">— Select a reason —</option>
+                    <option value="Make friends / build relationships" title="Make friends / build relationships" data-tr="Make friends / build relationships">Make friends / build relationships</option>
+                    <option value="Improve or maintain relationships (family, friends, customers, citizens)" title="Improve or maintain relationships (family, friends, customers, citizens)" data-tr="Improve or maintain relationships">Improve or maintain relationships</option>
+                    <option value="Image / reputation" title="Image / reputation" data-tr="Image / reputation">Image / reputation</option>
+                    <option value="Learn or work more efficiently" title="Learn or work more efficiently" data-tr="Learn or work more efficiently">Learn or work more efficiently</option>
+                    <option value="Solve problems or make decisions efficiently" title="Solve problems or make decisions efficiently" data-tr="Solve problems or make decisions efficiently">Solve problems or make decisions efficiently</option>
+                    <option value="Better physical and mental health" title="Better physical and mental health" data-tr="Better physical and mental health">Better physical and mental health</option>
+                    <option value="Feel less stressed or feel more energized" title="Feel less stressed or feel more energized" data-tr="Feel less stressed or feel more energized">Feel less stressed or feel more energized</option>
+                    <option value="__auto__" title="Choose a reason for me" data-tr="Choose a reason for me">Choose a reason for me</option>
+                  </select>
+                </div>
+                <div id="s0-idea-status" style="font-size:10.5px;color:#888;margin-top:4px;text-transform:none;letter-spacing:normal;font-weight:400;min-height:13px;"></div>
+              </th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="stage0-block-label">Statement &amp; Reason</td>
-              <td id="stage0-structure-1" class="stage0-structure"></td>
+              <td class="stage0-block-label" data-tr="Statement &amp; Reason">Statement &amp; Reason</td>
               <td id="stage0-full-1" class="stage0-full"></td>
+              <td id="stage0-spine-1" class="stage0-spine"></td>
             </tr>
             <tr>
-              <td class="stage0-block-label">Before Example</td>
-              <td id="stage0-structure-2" class="stage0-structure"></td>
+              <td class="stage0-block-label" data-tr="Before Example">Before Example</td>
               <td id="stage0-full-2" class="stage0-full"></td>
+              <td id="stage0-spine-2" class="stage0-spine"></td>
             </tr>
             <tr>
-              <td class="stage0-block-label">After Example</td>
-              <td id="stage0-structure-3" class="stage0-structure"></td>
+              <td class="stage0-block-label" data-tr="After Example">After Example</td>
               <td id="stage0-full-3" class="stage0-full"></td>
+              <td id="stage0-spine-3" class="stage0-spine"></td>
+            </tr>
+            <tr>
+              <td style="border-bottom:none;"></td>
+              <td id="stage0-wordcount-cell" style="border-bottom:none;padding-top:6px;font-size:11.5px;color:#888;">
+                Sample answer: <b id="stage0-word-count">—</b> words
+              </td>
+              <td style="border-bottom:none;"></td>
             </tr>
           </tbody>
         </table>
@@ -261,7 +298,6 @@
           </div>
           <div id="stage0-post-record" class="hidden" style="display:flex;flex-direction:column;gap:8px;width:100%;">
             <button id="btn-stage0-record-again" class="btn-record-again">Record Again</button>
-            <button id="btn-stage0-save" class="btn-save-next">Save &amp; Get Transcript</button>
           </div>
         </div>
 
@@ -269,8 +305,8 @@
           <div class="result-transcript-label" id="stage0-transcript-label">Transcript</div>
           <div id="stage0-transcript-text" class="result-transcript-text" style="margin-bottom:8px;"></div>
           <audio id="stage0-playback" controls class="question-audio-player" style="margin-bottom:10px;"></audio>
-          <button id="btn-stage0-feedback" class="btn-secondary" style="width:auto;padding:8px 20px;">Similarity Check</button>
-          <div id="stage0-feedback-text" class="result-grammar-block hidden" style="margin-top:10px;"></div>
+          <div id="stage0-analysis-block" class="result-analysis-block hidden"></div>
+          <div id="stage0-gap-block" class="result-analysis-block hidden" style="margin-top:10px;border-top:1px solid #eee;padding-top:10px;"></div>
         </div>
 
       </div>
@@ -328,34 +364,9 @@
 
   <div id="interview-body">
 
-    <!-- Left col -->
-    <div id="interview-left">
-      <img id="interview-img" src="" alt="Interviewer" />
-
-      <!-- Record button -->
-      <button id="btn-record" class="btn-record hidden" title="Start Recording">
-        <div class="record-dot"></div>
-      </button>
-
-      <!-- Record button -->
-      <!-- Post-recording buttons -->
-      <div id="post-record-buttons" class="hidden">
-        <button id="btn-record-again" class="btn-record-again">Record Again</button>
-        <button id="btn-save-next" class="btn-save-next">Save &amp; Next →</button>
-      </div>
-
-      <!-- Timer -->
-      <div id="response-timer-box" class="hidden">
-        <div id="response-timer-label">RESPONSE TIME</div>
-        <div id="response-timer-value">
-          <span id="response-timer-digits">00:10</span>
-        </div>
-      </div>
-
-
-    </div>
-
-    <!-- Right col -->
+    <!-- Single full-width column. The record controls and the result sit below
+         the cards, matching Stage 0, so the analysis appears where the student
+         is already looking instead of in a narrow side strip. -->
     <div id="interview-practice-panel">
 
       <div id="practice-question-card" class="practice-card hidden">
@@ -371,20 +382,27 @@
       </div>
 
       <div id="practice-support-card" class="practice-card hidden">
-        <div class="practice-card-header" style="display:block;">
-          <div style="display:flex;align-items:center;gap:14px;">
-            <div id="practice-stage-title"></div>
-            <label id="toggle-support-label" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;font-size:15px;font-weight:600;color:#00736b;">
-              <input type="checkbox" id="toggle-support" checked style="width:20px;height:20px;accent-color:#00736b;cursor:pointer;">
-              <span class="toggle-text">Hide text</span>
-            </label>
+        <!-- Two columns. Each carries its own heading so the two headings sit on
+             the same line: the reference structure is short, so it takes a third
+             and the idea panel takes the rest. -->
+        <div id="practice-support-split">
+
+        <div id="practice-support-left">
+          <div class="practice-card-header" style="display:block;">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div id="practice-stage-title"></div>
+              <label id="toggle-support-label" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;font-size:15px;font-weight:600;color:#00736b;">
+                <input type="checkbox" id="toggle-support" checked style="width:20px;height:20px;accent-color:#00736b;cursor:pointer;">
+                <span class="toggle-text">Hide text</span>
+              </label>
+            </div>
+            <div id="practice-stage-instruction"></div>
           </div>
-          <div id="practice-stage-instruction"></div>
+          <div id="practice-reason-list"></div>
         </div>
-        <div id="practice-reason-list"></div>
 
         <!-- ═══ IDEA FRAME (💡 Help me with ideas) ═══ -->
-        <div id="idea-frame-wrap" style="margin-top:14px;border-top:1px dashed #cfe6e4;padding-top:12px;">
+        <div id="idea-frame-wrap">
           <div id="idea-frame-heading"
             style="font-size:13px;font-weight:700;color:#8e44ad;margin-bottom:8px;white-space:nowrap;" data-tr="💡 Help me with ideas">💡 Help me with ideas</div>
 
@@ -427,11 +445,41 @@
                   </tr>
                 </tbody>
               </table>
-              <div style="font-size:11.5px;color:#8e44ad;margin-top:8px;line-height:1.5;" data-tr="💡 All three are short idea spines (keywords linked by →) — expand each one into your own spoken sentences.">💡 All three are short idea spines (keywords linked by →) — expand each one into your own spoken sentences.</div>
+              <div style="font-size:11.5px;color:#8e44ad;margin-top:8px;line-height:1.5;" data-tr="💡 All three are short ideas (keywords linked by →) — expand each one into your own spoken sentences.">💡 All three are short ideas (keywords linked by →) — expand each one into your own spoken sentences.</div>
             </div>
           </div>
         </div>
         <!-- ═══ /IDEA FRAME ═══ -->
+        </div>
+      </div>
+
+      <!-- Record controls: centred below the cards, as in Stage 0. -->
+      <div id="practice-record-area">
+        <button id="btn-record" class="btn-record hidden" title="Start Recording">
+          <div class="record-dot"></div>
+        </button>
+
+        <div id="response-timer-box" class="hidden">
+          <div id="response-timer-label">RESPONSE TIME</div>
+          <div id="response-timer-value">
+            <span id="response-timer-digits">00:10</span>
+          </div>
+        </div>
+
+        <div id="post-record-buttons" class="hidden">
+          <button id="btn-record-again" class="btn-record-again">Record Again</button>
+          <button id="btn-save-next" class="btn-save-next">Save &amp; Next →</button>
+        </div>
+      </div>
+
+      <!-- Stage 4: the take is graded as soon as it stops, so the student can
+           read the result before choosing Record Again or Save & Next. Sits in
+           the wide panel (not the narrow left strip) so it is readable. -->
+      <div id="practice-result-area" class="hidden">
+        <div class="result-transcript-label" id="practice-transcript-label" data-tr="Transcript">Transcript</div>
+        <div id="practice-transcript-text" class="result-transcript-text"></div>
+        <div id="practice-analysis-block" class="result-analysis-block hidden"></div>
+        <div id="practice-gap-block" class="result-analysis-block hidden"></div>
       </div>
 
     </div>
@@ -559,10 +607,35 @@
     } catch (e) {}
   })();
 
+  // ── Which screen is live? Stage 0 keeps its question in STAGE0_CURRENT,
+  // every other screen uses STATE.currentQuestion. Both live in script.js,
+  // which loads AFTER this block, so all access is typeof-guarded.
+  function inStage0() {
+    var s = document.getElementById("screen-stage0");
+    return !!(s && s.classList.contains("active"));
+  }
+
+  function liveQuestion() {
+    try {
+      if (inStage0()) {
+        var s0 = (typeof STAGE0_CURRENT !== "undefined") ? STAGE0_CURRENT : null;
+        if (!s0) return null;
+        return {
+          question_id:       s0.id || "",
+          q:                 s0.question || "",
+          question_type:     s0.question_type || "free",
+          opening_type:      s0.opening_type  || "open",
+          highlight_phrases: Array.isArray(s0.highlight_phrases) ? s0.highlight_phrases : []
+        };
+      }
+      return (typeof STATE !== "undefined" && STATE) ? STATE.currentQuestion : null;
+    } catch (e) { return null; }
+  }
+
   function ideaCacheKey(reason) {
     var id = "";
     try {
-      var q = (typeof STATE !== "undefined" && STATE) ? STATE.currentQuestion : null;
+      var q = liveQuestion();
       if (q) id = q.question_id || "";
       if (!id && q && q.q) {
         // Fallback: cheap stable hash of the question text.
@@ -584,33 +657,35 @@
     try { localStorage.setItem(k, answer); } catch (e) {}
   }
 
-  function showFrame(frame) {
+  // Stage 0 renders the spine straight into the table's third column, so it sits
+  // side by side with the sample. The interview screen keeps its own output table.
+  function showFrame(frame, prefix, outputId) {
     var stmt = (frame.statement || "—").replace(/,\s*because\b/gi, " because");
-    if ($("idea-block-1")) $("idea-block-1").textContent = stmt;
-    if ($("idea-block-2")) $("idea-block-2").textContent = frame.before || "—";
-    if ($("idea-block-3")) $("idea-block-3").textContent = frame.after || "—";
-    if ($("idea-frame-output")) $("idea-frame-output").style.display = "";
+    if ($(prefix + "1")) $(prefix + "1").textContent = stmt;
+    if ($(prefix + "2")) $(prefix + "2").textContent = frame.before || "—";
+    if ($(prefix + "3")) $(prefix + "3").textContent = frame.after  || "—";
+    if (outputId && $(outputId)) $(outputId).style.display = "";
   }
 
   // Pull the live question text so the generated idea is on-topic.
   function currentQuestionText() {
-    try {
-      var q = (typeof STATE !== "undefined" && STATE) ? STATE.currentQuestion : null;
-      return q ? (q.q || "") : "";
-    } catch (e) { return ""; }
+    var q = liveQuestion();
+    return q ? (q.q || "") : "";
   }
 
   // Full meta for the live question: type + any required highlighted phrases.
+  // Phrases are trimmed — a stray trailing space in the source data breaks
+  // downstream matching.
   function currentQuestionMeta() {
-    try {
-      var q = (typeof STATE !== "undefined" && STATE) ? STATE.currentQuestion : null;
-      if (!q) return { question_type: "free", opening_type: "open", highlight_phrases: [] };
-      return {
-        question_type: q.question_type || "free",
-        opening_type: q.opening_type || "open",
-        highlight_phrases: Array.isArray(q.highlight_phrases) ? q.highlight_phrases : []
-      };
-    } catch (e) { return { question_type: "free", opening_type: "open", highlight_phrases: [] }; }
+    var q = liveQuestion();
+    if (!q) return { question_type: "free", opening_type: "open", highlight_phrases: [] };
+    var phrases = Array.isArray(q.highlight_phrases) ? q.highlight_phrases : [];
+    return {
+      question_type: q.question_type || "free",
+      opening_type:  q.opening_type  || "open",
+      highlight_phrases: phrases.map(function (p) { return String(p).trim(); })
+                                .filter(Boolean)
+    };
   }
 
   // The idea panel is always visible now (no toggle button). Translate its
@@ -631,53 +706,80 @@
   try { if (typeof translateStaticEls === "function") translateStaticEls("#idea-frame-wrap"); } catch (e) {}
 
   // Build the frame via the SAME backend + mode the writing tool uses.
-  var fillBtn = $("btn-idea-fill");
-  if (fillBtn) fillBtn.addEventListener("click", async function () {
-    var sel = $("idea-reason-select");
-    var status = $("idea-status");
-    if (!sel || !sel.value) { if (status) status.textContent = "Please pick a reason first."; return; }
+  // Bound twice: once for the interview screen, once for Stage 0. Both share
+  // the parser, the cache and the backend — only the element ids differ.
+  function bindIdeaPanel(cfg) {
+    var fillBtn = $(cfg.button);
+    if (!fillBtn) return;
 
-    var reason = sel.value;
-    if (reason === "__auto__") reason = "AUTO";
+    fillBtn.addEventListener("click", async function () {
+      var sel    = $(cfg.select);
+      var status = $(cfg.status);
+      if (!sel || !sel.value) { if (status) status.textContent = "Please pick a reason first."; return; }
 
-    var question = currentQuestionText();
-    if (!question) { if (status) status.textContent = "Open a question first, then try again."; return; }
-    var meta = currentQuestionMeta();
+      var reason = sel.value;
+      if (reason === "__auto__") reason = "AUTO";
 
-    // Cache hit — no API call.
-    var cached = ideaCacheGet(reason);
-    if (cached) {
-      showFrame(parseSpineSections(cached));
-      if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
-      return;
-    }
+      var question = currentQuestionText();
+      if (!question) { if (status) status.textContent = "Open a question first, then try again."; return; }
+      var meta = currentQuestionMeta();
 
-    fillBtn.disabled = true;
-    if (status) status.textContent = "Getting ideas…";
-    try {
-      var res = await fetch("/.netlify/functions/generate-speaking-idea", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: question,
-          reason: reason,
-          question_type: meta.question_type,
-          opening_type: meta.opening_type,
-          highlight_phrases: meta.highlight_phrases
-        })
-      });
-      var d = await res.json();
-      if (!res.ok) throw new Error(d.error || "Failed");
-      var parts = parseSpineSections(d.answer || "");
-      if (!parts.statement && !parts.before && !parts.after) throw new Error("Empty");
-      ideaCacheSet(reason, d.answer || "");
-      showFrame(parts);
-      if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
-    } catch (e) {
-      if (status) status.textContent = "Could not get ideas. Please try again.";
-    }
-    fillBtn.disabled = false;
+      // Cache hit — no API call.
+      var cached = ideaCacheGet(reason);
+      if (cached) {
+        showFrame(parseSpineSections(cached), cfg.blockPrefix, cfg.output);
+        if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
+        return;
+      }
+
+      fillBtn.disabled = true;
+      if (status) status.textContent = "Getting ideas…";
+      try {
+        var res = await fetch("/.netlify/functions/generate-speaking-idea", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question: question,
+            reason: reason,
+            question_type: meta.question_type,
+            opening_type: meta.opening_type,
+            highlight_phrases: meta.highlight_phrases
+          })
+        });
+        var d = await res.json();
+        if (!res.ok) throw new Error(d.error || "Failed");
+        var parts = parseSpineSections(d.answer || "");
+        if (!parts.statement && !parts.before && !parts.after) throw new Error("Empty");
+        ideaCacheSet(reason, d.answer || "");
+        showFrame(parts, cfg.blockPrefix, cfg.output);
+        if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
+      } catch (e) {
+        if (status) status.textContent = "Could not get ideas. Please try again.";
+      }
+      fillBtn.disabled = false;
+    });
+  }
+
+  // Interview screen — renders into its own output table.
+  bindIdeaPanel({
+    button: "btn-idea-fill",
+    select: "idea-reason-select",
+    status: "idea-status",
+    blockPrefix: "idea-block-",
+    output: "idea-frame-output"
   });
+
+  // Stage 0 — renders straight into the Idea Spine column (no separate table).
+  bindIdeaPanel({
+    button: "s0-btn-idea-fill",
+    select: "s0-idea-reason-select",
+    status: "s0-idea-status",
+    blockPrefix: "stage0-spine-",
+    output: null
+  });
+
+  // Translate the Stage 0 panel's static labels too.
+  try { if (typeof translateStaticEls === "function") translateStaticEls("#stage0-table-area"); } catch (e) {}
 })();
 </script>
 <script src="script.js"></script>

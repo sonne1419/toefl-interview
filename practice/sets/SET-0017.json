@@ -77,6 +77,24 @@
       }
     }
   },
+  "stage4_samples": {
+    "open_free": {
+      "question": "First, what kinds of news sources do your friends or people in your country usually prefer?",
+      "answer": "I think most people in my country prefer using social media to get news because it helps them feel less stressed.\nIn the past, people usually watched TV news or read newspapers, and a lot of the news was quite serious and formal. As a result, people often did not feel relaxed after watching or reading the news.\nBut now, people can simply use social media. There are many different styles of news on social media. If they do not like serious reports, they can choose something funnier or more light-hearted. Therefore, getting news is not as stressful as it was before."
+    },
+    "open_required": {
+      "question": "What activity is important for developing a sense of responsibility and empathy?",
+      "answer": "I would say doing volunteer work is essential for developing a sense of responsibility because it helps people know more about those who need help.\nFor example, in the past, I didn't do volunteer work at all. I didn't know many poor people, and I did not feel that I was responsible for helping them.\nBut after I started helping out at a local charity, everything changed. I started talking with the poor families there, so I understood their needs and challenges much better. As a result, I really felt that I had a responsibility to help them more, and I also cherished what I had more."
+    },
+    "pick1_free": {
+      "question": "When you go shopping, do you prefer buying things online or going to physical stores? Why?",
+      "answer": "I prefer going to physical stores because it helps me build stronger relationships with my family and friends.\nFor example, in the past, I used to shop online most of the time. I usually did it by myself, so I sometimes felt disconnected from others.\nBut now, I often go shopping with my family or friends. To be more specific, we go to shopping malls together on weekends. We walk around, talk with each other, and help each other choose things. As a result, our relationships have become much stronger."
+    },
+    "pick1_required": {
+      "question": "In recent years, online shopping has become more common. Do you think it will become even more popular in the future?",
+      "answer": "Yes, I think online shopping will become even more popular in the future because it helps people shop more efficiently.\nFor example, in the past, people had to go to physical stores to buy things. They had to drive to the mall, and they had to spend a lot of time looking for what they wanted. So shopping was not very efficient.\nBut now, people can shop online. They can search for products easily, and they can place orders very quickly. As a result, shopping has become much more efficient, and I believe this trend will continue and online shopping will become even more popular in the future."
+    }
+  },
   "questions": [
     {
       "question_id": "q001",

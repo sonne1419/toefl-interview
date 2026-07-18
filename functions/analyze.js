@@ -27,80 +27,56 @@ Interview Band 0 Sample (No Credit — does not address the question; off-topic 
 ehmm... morning routine is good. I like exercise. it's healthy. it's good for your body.
 `;
 
-const INTERVIEW_SYSTEM = `You are a TOEFL teacher evaluating a student's Speaking Interview responses.
-This is a text-based analysis of transcribed speech.
+// Band-only variant: Stage 0 sends mode="band_only" because the gap analysis
+// (why-not-5-speaking) carries all the written feedback there. Other stages
+// have no golden sample, so they keep the full three-criterion output.
+const INTERVIEW_SYSTEM_BAND_ONLY = `You are a TOEFL teacher scoring transcribed Speaking Interview responses.
 
-IMPORTANT: Fluency and Intelligibility can only be inferred from the text — do NOT comment on pronunciation, intonation, rhythm, or stress. Make this limitation clear.
+The transcript comes from speech recognition. It has no real capitalization or punctuation of its own — read it as if it were entirely lowercase and unpunctuated. Score only the words the student chose.
 
-IMPORTANT: Evaluate ONLY the text under "Student's response". The question is provided for context only.
+Evaluate ONLY the text under "Student's response". The question is context.
 
-STEP 1 — Before assigning a band, identify the student's original contribution:
-What idea, reason, or example did the student add that relates to the question? If there is none, the response cannot score higher than Band 1.
+Bands:
+- Band 0: no response, no English, entirely unintelligible, or nothing connected to the question.
+- Band 1: connected to the question but barely — isolated words or phrases, no developed idea.
+- Band 2: attempts an answer with little or no elaboration.
+- Band 3-5: match against the band samples provided.
 
-STEP 2 — Check for these scoring rules:
+Any content genuinely tied to the question earns at least Band 1, however short or indirect. Grammar errors only lower the band when they obscure meaning.
 
-Band 0 rules (assign Band 0 ONLY if ANY of these apply):
-- No response
-- Entirely unintelligible
-- No English
-- The response has no meaningful connection to the prompt
-- The response consists only of filler, repeated stock phrases, or generic refusal with no prompt-connected content
-IMPORTANT:
-Do NOT assign Band 0 if the student gives any content that is meaningfully tied to the prompt, even if the response is incomplete, indirect, evasive, very short, or says they cannot answer.
-A response is prompt-connected if it:
-- refers to the topic, situation, choice, opinion, problem, experience, or task in the question
-- gives a related reason, example, explanation, feeling, preference, or condition
-- partially answers one part of the question
-- discusses why the prompt is difficult to answer in a way that is related to the prompt
-Prompt-connected but weak responses should be Band 1 or Band 2, not Band 0.
-
-Band 1 rules (assign Band 1 if ANY of these apply):
-- The response is only vaguely connected to the question
-- Consists mainly of isolated words or phrases with no coherent idea
-- Mostly unintelligible with severely limited vocabulary
-- No meaningful elaboration beyond acknowledging the topic exists
-
-CRITICAL FORMAT RULE: BAND:X must ALWAYS appear as the last line of each question section — even for Band 0 responses. Never skip this line regardless of response quality.
-
-Use these official rubric definitions for Band 0 and Band 1:
-
-Band 0: No response OR the response is entirely unintelligible OR there is no English in the response OR the content is entirely unconnected to the prompt.
-
-Band 1 (An unsuccessful response): The response minimally addresses the question, and it may demonstrate very limited control of language. A typical response exhibits the following:
-- The response is only vaguely connected to language in the interviewer's question
-- The response is mostly unintelligible
-- The response consists mainly of isolated words or phrases
-
-For Band 2, also use this official rubric definition:
-
-Band 2 (A mostly unsuccessful response): The response reflects an attempt to address the question, but it is not supported in a meaningful and/or intelligible way. A typical response exhibits the following:
-- The response is minimally connected to the interviewer's question, but it has little or no relevant elaboration or consists mainly of language from the question
-- Intelligibility is limited; the speaker's intended meaning is often difficult to discern
-- The response shows a very limited range of grammar and vocabulary
-
-For Band 3–5, compare each response to the band samples to determine the band.
-
-Use this EXACT format for each question — no deviations:
+Output exactly two lines per question — the header line and the band line — and nothing else. No evaluation, no explanation, no advice. The "=== Q1 ===" header is required and must be kept exactly as shown, including for a single question:
 
 === Q1 ===
-[Your evaluation here]
+BAND:X
+
+=== Q2 ===
+BAND:X`;
+
+const INTERVIEW_SYSTEM = `You are a TOEFL teacher scoring transcribed Speaking Interview responses.
+
+The transcript comes from speech recognition. It has no real capitalization or punctuation of its own — read it as if it were entirely lowercase and unpunctuated. Score only the words the student chose.
+
+Evaluate ONLY the text under "Student's response". The question is context.
+
+Bands:
+- Band 0: no response, no English, entirely unintelligible, or nothing connected to the question.
+- Band 1: connected to the question but barely — isolated words or phrases, no developed idea.
+- Band 2: attempts an answer with little or no elaboration.
+- Band 3-5: match against the band samples provided.
+
+Any content genuinely tied to the question earns at least Band 1, however short or indirect. Grammar errors only lower the band when they obscure meaning.
+
+Format for each question, exactly:
+
+=== Q1 ===
 1. Organization: ...
 2. Fluency & Intelligibility (inferred from text only): ...
 3. Language Use (Vocabulary & Grammar): ...
 BAND:X
 
-=== Q2 ===
-[repeat structure]
-BAND:X
+BAND:X is always the last line, always present, never before the evaluation. Do not repeat the question or transcript.
 
-Rules:
-- X is the band (0, 1, 2, 3, 4, or 5).
-- BAND:X must always be the LAST line of each question section, after the evaluation.
-- Do not state the band before the evaluation.
-- Do not repeat the question or transcript in your response.
-- Treat grammar errors as minor issues unless they significantly impede meaning. Do not let grammar alone lower the band score.
-- Ignore all capitalization and punctuation in the transcripts. These are Whisper speech recognition artifacts and do not reflect the student's actual speech.
-- This is a SPOKEN response. NEVER mention, comment on, or criticize punctuation, capitalization, or spelling in your feedback. Do not raise them as issues, examples, or suggestions under any circumstances — they are irrelevant to a speaking task.`;
+You cannot hear the recording, so say nothing about pronunciation, intonation, or rhythm — and nothing about capitalization, punctuation, or spelling.`;
 
 function withLanguage(systemPrompt, language) {
   const lang = (language || "").trim();
@@ -176,7 +152,17 @@ exports.handler = async (event) => {
   // corrupt a key -> 401) and fall back from OPENAI_API_KEY to ALT_OPENAI_KEY.
   const _keys = [];
   for (const k of [process.env.OPENAI_API_KEY, process.env.ALT_OPENAI_KEY]) {
-    if (k && k.trim() && _keys.indexOf(k.trim()) === -1) _keys.push(k.trim());
+    const t = (k || "").trim();
+    if (!t || _keys.indexOf(t) !== -1) continue;
+    // Skip malformed keys (e.g. a JWT accidentally set in the env var) — sending
+    // one as a bearer token makes OpenAI drop the connection instead of 401ing,
+    // which would otherwise prevent falling back to the good key.
+    if (!t.startsWith("sk-")) {
+      console.warn("Ignoring malformed OpenAI key: length " + t.length +
+                   ", starts '" + t.slice(0, 4) + "'");
+      continue;
+    }
+    _keys.push(t);
   }
   if (!_keys.length) {
     return { statusCode: 500, body: JSON.stringify({ error: "No OpenAI API key set (OPENAI_API_KEY / ALT_OPENAI_KEY)" }) };
@@ -189,7 +175,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
   }
 
-  const { questions, language } = body; // array of { question, transcript, index }
+  const { questions, language, mode } = body; // array of { question, transcript, index }
   if (!questions || !Array.isArray(questions) || questions.length === 0) {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing questions array" }) };
   }
@@ -205,12 +191,15 @@ exports.handler = async (event) => {
     let analysis, lastErr;
     for (const key of _keys) {
       try {
-        analysis = await callOpenAI(key, withLanguage(INTERVIEW_SYSTEM, language), userContent);
+        const _system = (mode === "band_only") ? INTERVIEW_SYSTEM_BAND_ONLY : INTERVIEW_SYSTEM;
+        // band_only returns no prose, so there is nothing to translate.
+        analysis = await callOpenAI(key, (mode === "band_only") ? _system : withLanguage(_system, language), userContent);
         lastErr = null;
         break;
       } catch (e) {
         lastErr = e;
-        if (e.statusCode !== 401 && e.statusCode !== 403) break;  // only retry on auth errors
+        // Retry on auth errors and on connection-level failures (no status).
+        if (e.statusCode && e.statusCode !== 401 && e.statusCode !== 403) break;
       }
     }
     if (lastErr) throw lastErr;
@@ -218,6 +207,20 @@ exports.handler = async (event) => {
     // Parse per-question results using === Q1 === markers
     const parts = analysis.split(/={2,}\s*(Q\d+|OVERALL)\s*={2,}/);
     const parsed = {};
+
+    // Fallback: a terse reply (especially in band_only mode) may drop the
+    // "=== Q1 ===" header and return just "BAND:3". With no markers to split
+    // on, parsed would come back empty and the caller would see no result, so
+    // map any bare BAND lines onto Q1, Q2, ... in order.
+    if (parts.length === 1) {
+      const bares = analysis.match(/BAND:\s*\d/g) || [];
+      bares.forEach((line, i) => {
+        parsed["Q" + (i + 1)] = {
+          band: parseInt(line.match(/\d/)[0]),
+          feedback: ""
+        };
+      });
+    }
     for (let i = 1; i < parts.length; i += 2) {
       const key     = parts[i] ? parts[i].trim() : "";
       const block   = parts[i + 1] ? parts[i + 1].trim() : "";

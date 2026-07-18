@@ -128,7 +128,17 @@ exports.handler = async (event) => {
   // (a corrupted OPENAI_API_KEY was causing 401s).
   const _keys = [];
   for (const k of [process.env.OPENAI_API_KEY, process.env.ALT_OPENAI_KEY]) {
-    if (k && k.trim() && _keys.indexOf(k.trim()) === -1) _keys.push(k.trim());
+    const t = (k || "").trim();
+    if (!t || _keys.indexOf(t) !== -1) continue;
+    // Skip malformed keys (e.g. a JWT accidentally set in the env var) — sending
+    // one as a bearer token makes OpenAI drop the connection instead of 401ing,
+    // which would otherwise prevent falling back to the good key.
+    if (!t.startsWith("sk-")) {
+      console.warn("Ignoring malformed OpenAI key: length " + t.length +
+                   ", starts '" + t.slice(0, 4) + "'");
+      continue;
+    }
+    _keys.push(t);
   }
   if (!_keys.length) {
     return { statusCode: 500, body: JSON.stringify({ error: "No OpenAI API key set (OPENAI_API_KEY / ALT_OPENAI_KEY)" }) };
@@ -159,7 +169,8 @@ exports.handler = async (event) => {
         break;
       } catch (e) {
         lastErr = e;
-        if (e.statusCode !== 401 && e.statusCode !== 403) break;
+        // Retry on auth errors and on connection-level failures (no status).
+        if (e.statusCode && e.statusCode !== 401 && e.statusCode !== 403) break;
       }
     }
     if (lastErr) throw lastErr;
