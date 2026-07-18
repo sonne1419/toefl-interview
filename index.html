@@ -56,7 +56,19 @@
     <p class="card-desc">Select a test and stage to begin.</p>
 
     <div class="field-group">
-      <label class="field-label">Stage</label>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <label class="field-label" style="margin:0;" data-tr="Stage">Stage</label>
+        <button type="button" id="btn-stage-help"
+          style="font-size:12px;color:#00736b;background:#eaf4f3;border:1px solid #b2dbd8;border-radius:14px;padding:3px 12px;cursor:pointer;"
+          data-tr="🤔 Which stage should I choose?">🤔 Which stage should I choose?</button>
+      </div>
+      <!-- All stages at once, so the choice can be made before selecting one. -->
+      <div id="stage-help-panel" style="display:none;margin:8px 0 6px;padding:10px 12px;border:1px solid #b2dbd8;border-radius:8px;background:#f0f9f8;font-size:12px;line-height:1.5;color:#333;">
+        <div style="margin:3px 0;"><b style="color:#00736b;">Stage 0 — Learn from Samples</b>: <span data-tr="If you don't know what a good answer sounds like, start here. Read a strong sample, then say it back — copy it, adapt it, or speak your own.">If you don't know what a good answer sounds like, start here. Read a strong sample, then say it back — copy it, adapt it, or speak your own.</span></div>
+        <div style="margin:3px 0;"><b style="color:#00736b;">Statement &amp; Reason (10s)</b>: <span data-tr="Train yourself to produce a position and a reason instantly, in two sentences. Checked for grammar.">Train yourself to produce a position and a reason instantly, in two sentences. Checked for grammar.</span></div>
+        <div style="margin:3px 0;"><b style="color:#00736b;">Full Answer (45s)</b>: <span data-tr="Build a whole answer part by part — statement, before example, after example. Scored, and compared with a Band 5 response.">Build a whole answer part by part — statement, before example, after example. Scored, and compared with a Band 5 response.</span></div>
+        <div style="margin:3px 0;"><b style="color:#00736b;">Exam Mode</b>: <span data-tr="A full test with no cues and no feedback until the end. Use it to check whether you can finish in time.">A full test with no cues and no feedback until the end. Use it to check whether you can finish in time.</span></div>
+      </div>
       <select id="stage-selector">
         <option value="">-- Select stage --</option>
         <option value="0">Stage 0 — Learn from Samples</option>
@@ -64,6 +76,9 @@
         <option value="4">Full Answer (45s)</option>
         <option value="5">Exam Mode</option>
       </select>
+      <!-- What the chosen stage actually does. Filled from STAGE_META.blurb so
+           the text lives in one place and translates with everything else. -->
+      <div id="stage-blurb" class="stage-blurb hidden"></div>
     </div>
 
     <div class="field-group" id="test-selector-group" style="display:none;">
@@ -246,15 +261,19 @@
                   <select id="s0-idea-reason-select"
                     style="width:100%;padding:4px 6px;border:1px solid #ccc;border-radius:6px;font-size:11px;text-transform:none;letter-spacing:normal;font-weight:400;">
                     <option value="" data-tr="— Select a reason —">— Select a reason —</option>
-                    <option value="Make friends / build relationships" title="Make friends / build relationships" data-tr="Make friends / build relationships">Make friends / build relationships</option>
-                    <option value="Improve or maintain relationships (family, friends, customers, citizens)" title="Improve or maintain relationships (family, friends, customers, citizens)" data-tr="Improve or maintain relationships">Improve or maintain relationships</option>
-                    <option value="Image / reputation" title="Image / reputation" data-tr="Image / reputation">Image / reputation</option>
-                    <option value="Learn or work more efficiently" title="Learn or work more efficiently" data-tr="Learn or work more efficiently">Learn or work more efficiently</option>
-                    <option value="Solve problems or make decisions efficiently" title="Solve problems or make decisions efficiently" data-tr="Solve problems or make decisions efficiently">Solve problems or make decisions efficiently</option>
-                    <option value="Better physical and mental health" title="Better physical and mental health" data-tr="Better physical and mental health">Better physical and mental health</option>
-                    <option value="Feel less stressed or feel more energized" title="Feel less stressed or feel more energized" data-tr="Feel less stressed or feel more energized">Feel less stressed or feel more energized</option>
+                    <option value="Make friends / build relationships" title="Make friends / build relationships">Make friends / build relationships</option>
+                    <option value="Improve or maintain relationships (family, friends, customers, citizens)" title="Improve or maintain relationships (family, friends, customers, citizens)">Improve or maintain relationships</option>
+                    <option value="Image / reputation" title="Image / reputation">Image / reputation</option>
+                    <option value="Learn or work more efficiently" title="Learn or work more efficiently">Learn or work more efficiently</option>
+                    <option value="Solve problems or make decisions efficiently" title="Solve problems or make decisions efficiently">Solve problems or make decisions efficiently</option>
+                    <option value="Better physical and mental health" title="Better physical and mental health">Better physical and mental health</option>
+                    <option value="Feel less stressed or feel more energized" title="Feel less stressed or feel more energized">Feel less stressed or feel more energized</option>
                     <option value="__auto__" title="Choose a reason for me" data-tr="Choose a reason for me">Choose a reason for me</option>
+                    <option value="__own__" data-tr="I'll use my own idea">I'll use my own idea</option>
                   </select>
+                  <input type="text" id="s0-idea-own-input" class="idea-own-input hidden"
+                    placeholder="Type your reason…" data-tr-placeholder="Type your reason…"
+                    autocomplete="off" spellcheck="false">
                 </div>
                 <div id="s0-idea-status" style="font-size:10.5px;color:#888;margin-top:4px;text-transform:none;letter-spacing:normal;font-weight:400;min-height:13px;"></div>
               </th>
@@ -307,6 +326,10 @@
           <audio id="stage0-playback" controls class="question-audio-player" style="margin-bottom:10px;"></audio>
           <div id="stage0-analysis-block" class="result-analysis-block hidden"></div>
           <div id="stage0-gap-block" class="result-analysis-block hidden" style="margin-top:10px;border-top:1px solid #eee;padding-top:10px;"></div>
+          <button id="btn-stage0-grammar" type="button" class="btn-secondary hidden"
+            style="width:auto;padding:6px 14px;font-size:12px;margin-top:10px;"
+            data-tr="Optional grammar check">Optional grammar check</button>
+          <div id="stage0-grammar-block" class="result-analysis-block hidden"></div>
         </div>
 
       </div>
@@ -419,7 +442,11 @@
               <option value="Better physical and mental health">Better physical and mental health</option>
               <option value="Feel less stressed or feel more energized">Feel less stressed or feel more energized</option>
               <option value="__auto__">Choose a reason for me</option>
+              <option value="__own__" data-tr="I'll use my own idea">I'll use my own idea</option>
             </select>
+            <input type="text" id="idea-own-input" class="idea-own-input hidden"
+              placeholder="Type your reason…" data-tr-placeholder="Type your reason…"
+              autocomplete="off" spellcheck="false">
             <div style="font-size:11.5px;color:#8e44ad;margin-top:6px;line-height:1.5;" data-tr="Not all reasons fit every question. If the logic isn't convincing, try a different reason or &quot;Choose a reason for me&quot;.">Not all reasons fit every question. If the logic isn't convincing, try a different reason or "Choose a reason for me".</div>
             <div style="margin-top:10px;">
               <button id="btn-idea-fill" type="button" class="btn-primary"
@@ -478,8 +505,15 @@
       <div id="practice-result-area" class="hidden">
         <div class="result-transcript-label" id="practice-transcript-label" data-tr="Transcript">Transcript</div>
         <div id="practice-transcript-text" class="result-transcript-text"></div>
+        <audio id="practice-playback" controls class="question-audio-player hidden" style="margin:8px 0;"></audio>
         <div id="practice-analysis-block" class="result-analysis-block hidden"></div>
         <div id="practice-gap-block" class="result-analysis-block hidden"></div>
+        <!-- Optional, teacher-prompted: grammar is not part of the band, so it is
+             offered rather than shown by default. -->
+        <button id="btn-practice-grammar" type="button" class="btn-secondary hidden"
+          style="width:auto;padding:6px 14px;font-size:12px;margin-top:10px;"
+          data-tr="Optional grammar check">Optional grammar check</button>
+        <div id="practice-grammar-block" class="result-analysis-block hidden"></div>
       </div>
 
     </div>
@@ -712,20 +746,48 @@
     var fillBtn = $(cfg.button);
     if (!fillBtn) return;
 
+    // Show the free-text box only when "I'll use my own idea" is selected.
+    var selEl = $(cfg.select), ownEl = $(cfg.ownInput);
+    if (selEl && ownEl) {
+      selEl.addEventListener("change", function () {
+        var own = (selEl.value === "__own__");
+        ownEl.classList.toggle("hidden", !own);
+        if (own) ownEl.focus();
+        var st = $(cfg.status);
+        if (st) st.textContent = "";
+      });
+    }
+
     fillBtn.addEventListener("click", async function () {
       var sel    = $(cfg.select);
       var status = $(cfg.status);
       if (!sel || !sel.value) { if (status) status.textContent = "Please pick a reason first."; return; }
 
       var reason = sel.value;
+
+      // "I'll use my own idea" — the student types their own reason and the spine
+      // is generated around it, exactly as if it were one of the listed reasons.
+      var ownInput = $(cfg.ownInput);
+      var isOwn    = (reason === "__own__");
+      if (isOwn) {
+        var typed = ownInput ? (ownInput.value || "").trim() : "";
+        if (!typed) {
+          if (status) status.textContent = "Type your reason first.";
+          if (ownInput) ownInput.focus();
+          return;
+        }
+        reason = typed;   // sent verbatim
+      }
+
       if (reason === "__auto__") reason = "AUTO";
 
       var question = currentQuestionText();
       if (!question) { if (status) status.textContent = "Open a question first, then try again."; return; }
       var meta = currentQuestionMeta();
 
-      // Cache hit — no API call.
-      var cached = ideaCacheGet(reason);
+      // Cache hit — no API call. Typed reasons always regenerate, because the
+      // same wording can be taken in more than one direction.
+      var cached = isOwn ? null : ideaCacheGet(reason);
       if (cached) {
         showFrame(parseSpineSections(cached), cfg.blockPrefix, cfg.output);
         if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
@@ -750,7 +812,7 @@
         if (!res.ok) throw new Error(d.error || "Failed");
         var parts = parseSpineSections(d.answer || "");
         if (!parts.statement && !parts.before && !parts.after) throw new Error("Empty");
-        ideaCacheSet(reason, d.answer || "");
+        if (!isOwn) ideaCacheSet(reason, d.answer || "");
         showFrame(parts, cfg.blockPrefix, cfg.output);
         if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
       } catch (e) {
@@ -766,6 +828,7 @@
     select: "idea-reason-select",
     status: "idea-status",
     blockPrefix: "idea-block-",
+    ownInput: "idea-own-input",
     output: "idea-frame-output"
   });
 
@@ -775,6 +838,7 @@
     select: "s0-idea-reason-select",
     status: "s0-idea-status",
     blockPrefix: "stage0-spine-",
+    ownInput: "s0-idea-own-input",
     output: null
   });
 

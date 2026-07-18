@@ -1188,6 +1188,75 @@ audio { height: 34px; min-width: 200px; }
   padding-top: 14px;
 }
 
+
+/* One-line description of the selected stage, on the start screen. */
+.stage-blurb {
+  margin-top: 8px;
+  padding: 9px 12px;
+  background: #f0f9f8;
+  border-left: 3px solid #00736b;
+  border-radius: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1a1a1a;
+}
+
+.stage-blurb.hidden { display: none; }
+
+
+/* Free-text reason, revealed when "I'll use my own idea" is selected. */
+.idea-own-input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid #8e44ad;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.idea-own-input.hidden { display: none; }
+
+.idea-own-input:focus {
+  outline: none;
+  border-color: #6c3483;
+  box-shadow: 0 0 0 2px rgba(142, 68, 173, .15);
+}
+
+
+/* Grammar error tags — a deterministic tally of the "Error:" labels, so the
+   counts reflect what was actually flagged. */
+.grammar-pills { margin: 6px 0 10px; }
+
+.grammar-pills-title {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 5px;
+}
+
+.grammar-pill {
+  display: inline-block;
+  background: #eaf4f3;
+  color: #00736b;
+  border: 1px solid #cfe6e4;
+  border-radius: 12px;
+  padding: 2px 10px;
+  margin: 2px 4px 2px 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Session-wide summary sits above the result cards. */
+#session-grammar-summary {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #b2dbd8;
+  border-radius: 8px;
+  background: #f0f9f8;
+}
+
 /* Stage 0 results — "try again" box under any card scoring below Band 5. */
 .stage0-redo {
   margin-top: 14px;

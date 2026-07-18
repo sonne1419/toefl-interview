@@ -95,11 +95,22 @@ function callOpenAI(apiKey, prompt) {
         const chunks = [];
         res.on("data", c => chunks.push(c));
         res.on("end", () => {
+          const data = Buffer.concat(chunks).toString("utf8");
+          // Surface the HTTP status so the caller can tell an auth failure
+          // (worth retrying with the other key) from a real error.
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            let msg = data;
+            try { const j = JSON.parse(data); if (j.error) msg = j.error.message; } catch (e) {}
+            const err = new Error(`OpenAI ${res.statusCode}: ${msg}`);
+            err.statusCode = res.statusCode;
+            reject(err);
+            return;
+          }
           try {
-            const json = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+            const json = JSON.parse(data);
             if (json.error) reject(new Error(json.error.message));
             else resolve(json.choices[0].message.content.trim());
-          } catch (e) { reject(new Error("Failed to parse response")); }
+          } catch (e) { reject(new Error("Failed to parse response: " + data.slice(0, 200))); }
         });
       }
     );
@@ -112,8 +123,23 @@ function callOpenAI(apiKey, prompt) {
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
 
-  const apiKey = process.env.ALT_OPENAI_KEY;
-  if (!apiKey) return { statusCode: 500, body: JSON.stringify({ error: "ALT_OPENAI_KEY not set" }) };
+  // Same key handling as the other functions: trim, reject anything that is not
+  // shaped like an OpenAI key (a corrupted env var otherwise gets sent as a
+  // bearer token and the connection is dropped), and fall back between them.
+  const _keys = [];
+  for (const k of [process.env.ALT_OPENAI_KEY, process.env.OPENAI_API_KEY]) {
+    const t = (k || "").trim();
+    if (!t || _keys.indexOf(t) !== -1) continue;
+    if (!t.startsWith("sk-")) {
+      console.warn("Ignoring malformed OpenAI key: length " + t.length +
+                   ", starts '" + t.slice(0, 4) + "'");
+      continue;
+    }
+    _keys.push(t);
+  }
+  if (!_keys.length) {
+    return { statusCode: 500, body: JSON.stringify({ error: "No usable OpenAI API key set (ALT_OPENAI_KEY / OPENAI_API_KEY)" }) };
+  }
 
   let body;
   try { body = JSON.parse(event.body); }
@@ -141,7 +167,16 @@ exports.handler = async (event) => {
     reasonLine;
 
   try {
-    let answer = await callOpenAI(apiKey, prompt);
+    let answer, lastErr;
+    for (const key of _keys) {
+      try { answer = await callOpenAI(key, prompt); lastErr = null; break; }
+      catch (e) {
+        lastErr = e;
+        // Retry on auth errors and on connection-level failures (no status).
+        if (e.statusCode && e.statusCode !== 401 && e.statusCode !== 403) break;
+      }
+    }
+    if (lastErr) throw lastErr;
     // Strip any preamble before the first "Statement & Reason:" label.
     const idx = answer.indexOf("Statement & Reason:");
     if (idx > 0) answer = answer.slice(idx);

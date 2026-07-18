@@ -10,16 +10,45 @@ const PRACTICE_REASONS = {
 
 const STAGE_META = {
   1: { title: "Statement & Reason",  instruction: "Say your answer and one reason.",
-       intro: "Read the question and focus on just the first two sentences of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
+       blurb: "Practise just the opening: your position and one reason for it. Two sentences, checked for grammar.",
+       intro: "This stage is only the first move of an answer — what you think, and why. Two sentences is enough; you are not telling the whole story yet.\n\n" +
+              "You have 10 seconds. The check starts on its own as soon as you stop — there is no button to press. Because this is a single block, there is no band score: you get a grammar check instead, showing any words that need correcting.\n\n" +
+              "💡 Stuck for an idea? Pick a reason and press Help me with ideas.\n" +
+              "💡 As the pattern gets easier, hide the question text and the cues and try again from memory.\n" +
+              "💡 Record Again is worth using — you have already seen what to fix." },
+
   2: { title: "Before Example",      instruction: "Practice the before/past example block.",
-       intro: "Read the question and focus on just the Before Example part of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
+       blurb: "Practise the 'before' half of your example: how things used to be. Checked for grammar.",
+       intro: "This stage is the middle of an answer — the situation in the past, before anything changed. It sets up the contrast that makes your point land.\n\n" +
+              "You have 15 seconds. The check starts on its own as soon as you stop. Because this is a single block, there is no band score: you get a grammar check instead, showing any words that need correcting.\n\n" +
+              "💡 Stuck for an idea? Pick a reason and press Help me with ideas.\n" +
+              "💡 As the pattern gets easier, hide the question text and the cues and try again from memory.\n" +
+              "💡 Record Again is worth using — you have already seen what to fix." },
+
   3: { title: "After Example",       instruction: "Practice the after/current result block.",
-       intro: "Read the question and focus on just the After Example part of your answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
+       blurb: "Practise the 'after' half: what changed, and the result. Checked for grammar.",
+       intro: "This stage is the end of an answer — what happens now, and the concrete outcome. A strong ending shows a real result, not a repeat of your reason.\n\n" +
+              "You have 20 seconds. The check starts on its own as soon as you stop. Because this is a single block, there is no band score: you get a grammar check instead, showing any words that need correcting.\n\n" +
+              "💡 Stuck for an idea? Pick a reason and press Help me with ideas.\n" +
+              "💡 As the pattern gets easier, hide the question text and the cues and try again from memory.\n" +
+              "💡 Record Again is worth using — you have already seen what to fix." },
+
   4: { title: "Full Answer",         instruction: "Use the short cues to speak the full answer.",
-       intro: "Read the question and focus on the full answer. When you are ready, press the record button. As you become more comfortable with the structure, try hiding the question text and the answer cues." },
+       blurb: "Put the three blocks together into a complete answer. Scored, and compared with a Band 5 response.",
+       intro: "This is the whole answer, start to finish — statement and reason, a before example, then an after example. The reference structure gives you the shape; the content is yours.\n\n" +
+              "You have 45 seconds. Scoring starts on its own as soon as you stop — there is no button to press. You will get a band score, and when the band is below 5, a comparison with a Band 5 answer showing what a strong response does differently.\n\n" +
+              "💡 Stuck for an idea? Pick a reason and press Help me with ideas.\n" +
+              "💡 The Band 5 sample answers a different question. Read it for how it is built, not for what it says.\n" +
+              "💡 Record Again is worth using — you have already seen what was missing." },
+
   5: { title: "Exam Mode",           instruction: "Exam mode — no cues.",
+       blurb: "A full test with no cues and no feedback until the end — the closest thing to the real exam.",
        intro: "" }
 };
+
+// Stage 0 is not in STAGE_META (it runs its own screen), but the selector still
+// needs a line describing it.
+const STAGE0_BLURB = "Read a strong sample answer, then say it back — copy it, adapt it, or speak your own. Scored, and compared with the sample.";
 
 // Fixed time limits per stage (seconds)
 const STAGE_TIME = { 1: 10, 2: 15, 3: 20 };
@@ -50,7 +79,8 @@ const STATE = {
   _gradeToken:       0,     // bumped per take so a stale grade can't overwrite a newer one
   _lastTranscript:   "",
   _lastBand:         null,
-  _lastGap:          ""
+  _lastGap:          "",
+  _lastGrammar:      ""
 };
 
 // ═══════════════════════════════════════════════════
@@ -563,6 +593,50 @@ function normalizeTranscript(text) {
 // ── Grammar change highlighting (ported from the Academic Discussion tool) ──
 // Highlights the changed words on BOTH sides: removed words in the Original
 // and added words in the Revised, plus bolds the format labels.
+
+// Tally the "Error:" labels from grammar feedback into count pills. Deterministic
+// — computed from the text, so it cannot invent a pattern the model did not flag.
+// Ported from the Academic Discussion tool.
+function grammarErrorCounts(text) {
+  const counts = {};
+  if (!text) return counts;
+  // Match "Error: …" up to the next label or the end, so it works whether the
+  // feedback is newline-separated or run together.
+  const re = /Error:\s*([\s\S]*?)(?=\s*(?:Revised:|Original:|Error:|===|$))/gi;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    m[1].split(/[;；]/).forEach(part => {
+      const label = part.trim().replace(/\s+/g, " ");
+      if (label) counts[label] = (counts[label] || 0) + 1;
+    });
+  }
+  return counts;
+}
+
+// Render a counts object as pills, most frequent first.
+function grammarPillsHTML(counts, heading) {
+  const labels = Object.keys(counts || {});
+  if (!labels.length) return "";
+  labels.sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+  const pills = labels.slice(0, 8).map(l =>
+    '<span class="grammar-pill">' + escapeHTML(l) +
+    (counts[l] > 1 ? ' ×' + counts[l] : '') + '</span>').join("");
+  return '<div class="grammar-pills">' +
+    (heading ? '<div class="grammar-pills-title" data-tr="' + escapeHTML(heading) + '">' +
+               escapeHTML(heading) + '</div>' : "") +
+    pills + '</div>';
+}
+
+// Pool the counts from several grammar results into one tally.
+function grammarPoolCounts(texts) {
+  const total = {};
+  (texts || []).forEach(t => {
+    const c = grammarErrorCounts(t);
+    Object.keys(c).forEach(k => { total[k] = (total[k] || 0) + c[k]; });
+  });
+  return total;
+}
+
 function highlightGrammarChanges(text) {
   if (!text) return text;
   // Strip the === Qn === section markers (parsing artifacts, not for display)
@@ -710,7 +784,9 @@ async function warmUpTranslations() {
   Object.keys(STAGE_META).forEach(k => {
     if (STAGE_META[k].intro)       set.add(STAGE_META[k].intro.trim());
     if (STAGE_META[k].instruction) set.add(STAGE_META[k].instruction.trim());
+    if (STAGE_META[k].blurb)       set.add(STAGE_META[k].blurb.trim());
   });
+  if (typeof STAGE0_BLURB === "string" && STAGE0_BLURB) set.add(STAGE0_BLURB.trim());
   set.add("Responses of 80 words and above are recommended.");
   // "Show sample" only appears in the DOM after the student ticks Hide sample,
   // so it would miss the [data-tr] sweep below. Add it explicitly.
@@ -720,6 +796,10 @@ async function warmUpTranslations() {
   ["Your answer", "(not scored)", "Your Recording",
    "5-point sample answer benchmark", "Compared with the 5-point sample",
    "Band 5 sample answer (a different question)", "Compared with a Band 5 answer",
+   "Grammar Check", "No grammar errors found — well done.", "Optional grammar check",
+   "Check grammar", "Most common grammar mistakes",
+   "No grammar errors found across this session — well done.",
+   "I'll use my own idea", "Type your reason first.", "Type your reason…",
    "The sample answers a different question:", "It answers:",
    "Try this question again",
    "Re-record your answer and compare it with the 5-point sample again. You have 45 seconds."
@@ -742,26 +822,38 @@ async function warmUpTranslations() {
   if (!uncached.length) return;
 
   // Try ONE batch call for all uncached strings.
+  // Send in chunks: one oversized batch would blow max_tokens, return null and
+  // force every string onto the slow per-string path.
+  const CHUNK = 12;
   try {
-    const res = await fetch("/.netlify/functions/translate", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texts: uncached, language: lang })
-    });
-    const data = await res.json();
-    if (data && Array.isArray(data.translations) && data.translations.length === uncached.length) {
-      uncached.forEach((src, i) => {
-        const tr = (data.translations[i] || "").trim();
-        if (tr) { try { localStorage.setItem("ui_tr::" + lang.toLowerCase() + "::" + src, tr); } catch(e) {} }
+    const chunks = [];
+    for (let i = 0; i < uncached.length; i += CHUNK) chunks.push(uncached.slice(i, i + CHUNK));
+
+    let allOk = true;
+    for (const part of chunks) {
+      const r = await fetch("/.netlify/functions/translate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texts: part, language: lang })
       });
-      return; // done in one call
+      const d = await r.json();
+      if (d && Array.isArray(d.translations) && d.translations.length === part.length) {
+        part.forEach((src, i) => {
+          const tr = (d.translations[i] || "").trim();
+          if (tr) { try { localStorage.setItem("ui_tr::" + lang.toLowerCase() + "::" + src, tr); } catch(e) {} }
+        });
+      } else {
+        allOk = false;   // this chunk failed; the per-string pass below covers it
+      }
     }
+    if (allOk) return;
   } catch(e) {
     // fall through to per-string
   }
 
-  // Fallback: per-string (only if the batch failed or returned null).
+  // Fallback: per-string, for whatever the chunked pass did not manage to cache.
   for (const raw of uncached) {
     const cacheKey = "ui_tr::" + lang.toLowerCase() + "::" + raw;
+    try { if (localStorage.getItem(cacheKey) !== null) continue; } catch(e) {}
     try {
       const res = await fetch("/.netlify/functions/translate", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -876,6 +968,9 @@ async function ensureMic() {
 }
 
 function startRecording() {
+  // Silence everything first: a question prompt or a playback still running
+  // would be picked up by the microphone.
+  stopAllAudio();
   STATE.audioChunks = [];
   STATE.mediaRecorder = new MediaRecorder(STATE.micStream);
   STATE.mediaRecorder.ondataavailable = e => STATE.audioChunks.push(e.data);
@@ -904,6 +999,19 @@ async function micPermissionState() {
   } catch (e) {
     return "unknown";
   }
+}
+
+
+// Stop every audio element on the page. Several can be playing at once — the
+// question prompt, a Stage 0 sample, a playback of the student's own take, or a
+// card on the results list — and leaving one running means it plays over the
+// next screen.
+function stopAllAudio() {
+  try {
+    document.querySelectorAll("audio").forEach(a => {
+      try { a.pause(); a.currentTime = 0; } catch (e) {}
+    });
+  } catch (e) {}
 }
 
 function releaseMic() {
@@ -967,8 +1075,11 @@ function showPostRecordButtons() {
   setRecordBtn("hidden");
   $("response-timer-box").classList.add("hidden");
   $("post-record-buttons").classList.remove("hidden");
-  // Stage 4 grades the take right away so Record Again is an informed retry.
-  if (STATE.selectedStage === 4 && STATE._lastBlob) {
+  // Grade the take right away so Record Again is an informed retry. Stage 4 gets
+  // a band plus a sample comparison; stages 1-3 get a grammar check (a single
+  // block cannot be banded). Stage 5 is exam mode and stays unmarked.
+  const st = STATE.selectedStage;
+  if (STATE._lastBlob && st !== 5 && st !== 0) {
     practiceGradeTake(STATE._lastBlob);
   }
 }
@@ -1020,6 +1131,124 @@ function practiceBand5Question(qOverride) {
 // read it before choosing Record Again or Save & Next.
 // ═══════════════════════════════════════════════════
 
+
+// ═══════════════════════════════════════════════════
+// STAGES 1-3 — INLINE GRAMMAR CHECK
+// Same moment as Stage 0 / Stage 4 grading: as soon as the take stops, so the
+// student sees their errors before deciding to re-record. Reuses grammar.js and
+// the existing word-diff highlighter, so corrections look the same everywhere.
+// PATTERNS is left to End Session, where there are several answers for an error
+// to actually recur across.
+// ═══════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════
+// OPTIONAL GRAMMAR CHECK (Stage 0 and Stage 4)
+// Grammar is not part of the band, so it is offered rather than shown: a teacher
+// can tell a particular student to press it. Stages 1-3 already run it
+// automatically, since a single block cannot be banded.
+// Shared by both screens — only the element ids differ.
+// ═══════════════════════════════════════════════════
+
+async function runOptionalGrammar(cfg) {
+  const btn   = $(cfg.button);
+  const block = $(cfg.block);
+  if (!btn || !block) return;
+
+  const question   = cfg.getQuestion();
+  const transcript = cfg.getTranscript();
+  if (!transcript || !transcript.trim()) return;
+
+  btn.disabled = true;
+  block.classList.remove("hidden");
+  block.innerHTML = '<div class="analysis-feedback">Checking grammar…</div>';
+
+  try {
+    const res = await fetch("/.netlify/functions/grammar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questions: [{ question, transcript }], language: analysisLang() })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Grammar check failed");
+
+    // Take Q1 and drop PATTERNS — one answer cannot show a recurring pattern.
+    const raw   = data.grammar || "";
+    const parts = raw.split(/={2,}\s*(Q\d+|PATTERNS)\s*={2,}/);
+    let q1 = "";
+    for (let i = 1; i < parts.length; i += 2) {
+      if ((parts[i] || "").trim() === "Q1") { q1 = (parts[i + 1] || "").trim(); break; }
+    }
+    if (!q1) q1 = raw.trim();
+
+    cfg.store(q1);   // carried to the results page and the export
+
+    const clean = q1.replace(/\(No grammar errors found\)/i, "").trim();
+    block.innerHTML =
+      '<div class="result-transcript-label" data-tr="Grammar Check">Grammar Check</div>' +
+      '<div class="analysis-feedback" style="margin-top:6px;">' +
+        (clean
+          ? escWithLabels(highlightGrammarChanges(q1)).replace(/\n/g, "<br>")
+          : '<div class="analysis-feedback-line" data-tr="No grammar errors found — well done.">' +
+            'No grammar errors found — well done.</div>') +
+      '</div>';
+    btn.classList.add("hidden");   // done; the result replaces it
+    try { translateStaticEls("#" + cfg.block); } catch (e) {}
+  } catch (e) {
+    console.error("Optional grammar check failed:", e.message);
+    block.innerHTML = '<div class="analysis-error">Grammar check failed. Please try again.</div>';
+    btn.disabled = false;
+  }
+}
+
+async function practiceGrammarCheck(question, transcript, token) {
+  const block = $("practice-analysis-block");
+  block.innerHTML = '<div class="analysis-feedback">Checking grammar…</div>';
+  block.classList.remove("hidden");
+
+  try {
+    const res = await fetch("/.netlify/functions/grammar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        questions: [{ question, transcript }],
+        language: analysisLang()
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Grammar check failed");
+    if (token !== STATE._gradeToken) return;   // superseded by a newer take
+
+    // grammar.js returns "=== Q1 === ... === PATTERNS === ...". Take Q1 and
+    // drop PATTERNS — one answer cannot show a recurring pattern.
+    const raw   = data.grammar || "";
+    const parts = raw.split(/={2,}\s*(Q\d+|PATTERNS)\s*={2,}/);
+    let q1 = "";
+    for (let i = 1; i < parts.length; i += 2) {
+      if ((parts[i] || "").trim() === "Q1") { q1 = (parts[i + 1] || "").trim(); break; }
+    }
+    if (!q1) q1 = raw.trim();   // no markers — show whatever came back
+
+    STATE._lastGrammar = q1;
+
+    const clean = q1.replace(/\(No grammar errors found\)/i, "").trim();
+    block.innerHTML =
+      '<div class="result-transcript-label" data-tr="Grammar Check">Grammar Check</div>' +
+      '<div class="analysis-feedback" style="margin-top:6px;">' +
+        (clean
+          ? escWithLabels(highlightGrammarChanges(q1)).replace(/\n/g, "<br>")
+          : '<div class="analysis-feedback-line" data-tr="No grammar errors found — well done.">' +
+            'No grammar errors found — well done.</div>') +
+      '</div>';
+    try { translateStaticEls("#practice-result-area"); } catch (e) {}
+  } catch (e) {
+    console.error("Stage " + STATE.selectedStage + " grammar check failed:", e.message);
+    if (token === STATE._gradeToken) {
+      block.innerHTML = '<div class="analysis-error">Grammar check failed. Please try again.</div>';
+    }
+  }
+}
+
 async function practiceGradeTake(blob) {
   const area   = $("practice-result-area");
   const textEl = $("practice-transcript-text");
@@ -1036,6 +1265,11 @@ async function practiceGradeTake(blob) {
   $("practice-transcript-label").classList.remove("hidden");
   textEl.classList.remove("hidden");
   textEl.textContent = "Transcribing…";
+  // New take — clear the previous grammar result and re-offer the button.
+  const gB = $("btn-practice-grammar"), gBlk = $("practice-grammar-block");
+  if (gB)   { gB.classList.add("hidden"); gB.disabled = false; }
+  if (gBlk) { gBlk.classList.add("hidden"); gBlk.innerHTML = ""; }
+  STATE._lastGrammar = "";
 
   // ── Transcribe ──
   let transcript = "";
@@ -1060,7 +1294,27 @@ async function practiceGradeTake(blob) {
   textEl.textContent = transcript || "(no speech detected)";
   $("practice-transcript-label").textContent = "Transcript — " + words + " words";
   STATE._lastTranscript = transcript;
+
+  // Let the student hear the take before deciding to re-record. Revoke the
+  // previous URL so each recording does not leak one.
+  const player = $("practice-playback");
+  if (player) {
+    if (player.dataset.blobUrl) { try { URL.revokeObjectURL(player.dataset.blobUrl); } catch (e) {} }
+    const url = URL.createObjectURL(blob);
+    player.dataset.blobUrl = url;
+    player.src = url;
+    player.classList.remove("hidden");
+  }
+
   if (!transcript.trim()) return;
+
+  // Stages 1-3 practise a single block (a statement, a before-example, an
+  // after-example). Banding a fragment against full-answer samples would
+  // mislead, and there is no organisation to assess — so those stages get a
+  // grammar check instead.
+  if (STATE.selectedStage !== 4) {
+    return practiceGrammarCheck(question, transcript, token);
+  }
 
   // ── Band ──
   block.innerHTML = '<div class="analysis-feedback">Scoring…</div>';
@@ -1099,6 +1353,21 @@ async function practiceGradeTake(blob) {
     : '<div class="analysis-error">Could not score this response.</div>';
 
   STATE._lastBand = band;
+
+  // Offer the grammar check now the score is in — stage 4 only, since 1-3
+  // already ran it automatically.
+  const gBtn = $("btn-practice-grammar");
+  if (gBtn) {
+    gBtn.classList.remove("hidden");
+    gBtn.disabled = false;
+    gBtn.onclick = () => runOptionalGrammar({
+      button: "btn-practice-grammar",
+      block:  "practice-grammar-block",
+      getQuestion:   () => (STATE.currentQuestion ? (STATE.currentQuestion.q || "") : ""),
+      getTranscript: () => STATE._lastTranscript || "",
+      store: (g) => { STATE._lastGrammar = g; }
+    });
+  }
 
   // ── Comparison (below Band 5 only) ──
   const sample = practiceBand5Sample();
@@ -1336,7 +1605,35 @@ function checkStartReady() {
 }
 
 $("test-selector").onchange  = checkStartReady;
-$("stage-selector").onchange = checkStartReady;
+$("stage-selector").onchange = () => { checkStartReady(); showStageBlurb(); };
+
+// "Which stage should I choose?" — lists every stage at once, so the choice can
+// be made without selecting one first.
+if ($("btn-stage-help")) {
+  $("btn-stage-help").onclick = () => {
+    const panel = $("stage-help-panel");
+    if (!panel) return;
+    const open = panel.style.display !== "none";
+    panel.style.display = open ? "none" : "block";
+    if (!open) { try { translateStaticEls("#stage-help-panel"); } catch (e) {} }
+  };
+}
+
+// Describe the selected stage on the start screen, so the choice is informed
+// rather than a guess at what "Statement & Reason" means.
+function showStageBlurb() {
+  const el = $("stage-blurb");
+  if (!el) return;
+  const v = $("stage-selector").value;
+  if (v === "") { el.classList.add("hidden"); el.textContent = ""; return; }
+  const text = (v === "0")
+    ? STAGE0_BLURB
+    : ((STAGE_META[parseInt(v)] || {}).blurb || "");
+  if (!text) { el.classList.add("hidden"); el.textContent = ""; return; }
+  el.classList.remove("hidden");
+  el.setAttribute("data-tr", text);
+  translateUI(text, el, false);
+}
 
 $("btn-start-session").onclick = async () => {
   const testFile = $("test-selector").value;
@@ -1554,14 +1851,19 @@ function saveRecording(blob) {
     serial: q.serial != null ? q.serial : "",
     // Stage 4 grades each take as it finishes, so the results page can replay
     // the score instead of re-running the whole analysis at End Session.
-    transcript: (stage === 4) ? (STATE._lastTranscript || "") : undefined,
+    transcript: (stage >= 1 && stage <= 4) ? (STATE._lastTranscript || "") : undefined,
     band:       (stage === 4) ? STATE._lastBand : undefined,
     gap:        (stage === 4) ? (STATE._lastGap || "") : undefined,
     sample:     (stage === 4) ? practiceBand5Sample() : undefined,
-    sample_q:   (stage === 4) ? practiceBand5Question() : undefined
+    sample_q:   (stage === 4) ? practiceBand5Question() : undefined,
+    // Stages 1-3 store the grammar result so End Session can replay it.
+    // Stages 1-3 run grammar automatically; stage 4 only if the student pressed
+    // the optional button. Either way it is carried to the results page.
+    grammar:    (stage >= 1 && stage <= 4) ? (STATE._lastGrammar || "") : undefined
   });
   // Clear so the next question cannot inherit this take's result.
   STATE._lastTranscript = ""; STATE._lastBand = null; STATE._lastGap = "";
+  STATE._lastGrammar = "";
 }
 
 
@@ -1871,6 +2173,15 @@ function renderPracticeSupport(task, question, stage) {
   const supportCard  = $("practice-support-card");
   const reasonList   = $("practice-reason-list");
 
+  // New question — clear the idea panel. One typed reason per question, matching
+  // how recordings are single-slot during practice.
+  const ideaSel = $("idea-reason-select");
+  if (ideaSel) ideaSel.value = "";
+  const ideaOwn = $("idea-own-input");
+  if (ideaOwn) { ideaOwn.value = ""; ideaOwn.classList.add("hidden"); }
+  const ideaStatus = $("idea-status");
+  if (ideaStatus) ideaStatus.textContent = "";
+
   // Question card — default hidden
   questionCard.classList.remove("hidden");
   questionCard.style.display = "";
@@ -2016,6 +2327,7 @@ $("toggle-support").onchange = () => {
 // ═══════════════════════════════════════════════════
 
 function endSession() {
+  stopAllAudio();
   $("saving-modal").classList.add("hidden");
   clearInterval(STATE.timerInterval);
 
@@ -2023,6 +2335,13 @@ function endSession() {
   // and shares Stage 0's layout (side-by-side comparison + redo).
   if (STATE.selectedStage === 4 && STATE.recordings.some(r => r.stage === 4)) {
     endStage4Session();
+    return;
+  }
+
+  // Exam mode uses the same results layout. It has no inline grading — a timed
+  // test gives no feedback until the end — so the scoring happens there.
+  if (STATE.selectedStage === 5 && STATE.recordings.some(r => r.stage === 5)) {
+    endExamSession();
     return;
   }
 
@@ -2039,12 +2358,235 @@ function endSession() {
 // is labelled as a quality reference rather than a model answer.
 // ═══════════════════════════════════════════════════
 
+
+// ═══════════════════════════════════════════════════
+// EXAM MODE — RESULTS
+// Same layout as Stage 4: band-only plus a comparison with the Band 5 sample.
+// Unlike practice, nothing is graded until now — a timed test gives no feedback
+// while it runs — so transcription and scoring happen here, then one optional
+// grammar pass across the whole session.
+// ═══════════════════════════════════════════════════
+
+
+// One grammar call across every exam answer. Renders the corrections under each
+// card, that card's own error tags, and a pooled tally at the top — which is the
+// part a student can act on, since it shows what recurs rather than one slip.
+async function runSessionGrammar(recs) {
+  const btn = $("btn-session-grammar");
+  const box = $("session-grammar-summary");
+  if (!btn || !box) return;
+
+  const withText = recs.filter(r => r.transcript && r.transcript.trim());
+  if (!withText.length) return;
+
+  btn.disabled = true;
+  box.classList.remove("hidden");
+  box.innerHTML = '<div class="analysis-feedback">Checking grammar…</div>';
+
+  try {
+    const res = await fetch("/.netlify/functions/grammar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        questions: withText.map(r => ({ question: r.q, transcript: r.transcript })),
+        language: analysisLang()
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Grammar check failed");
+
+    // Split into per-question blocks. PATTERNS is dropped: the pooled tags below
+    // are computed from the actual labels, so they cannot drift from the text.
+    const raw   = data.grammar || "";
+    const parts = raw.split(/={2,}\s*(Q\d+|PATTERNS)\s*={2,}/);
+    const byQ   = {};
+    for (let i = 1; i < parts.length; i += 2) {
+      const key = (parts[i] || "").trim();
+      if (/^Q\d+$/.test(key)) byQ[key] = (parts[i + 1] || "").trim();
+    }
+
+    const texts = [];
+    withText.forEach((r, i) => {
+      const g = byQ["Q" + (i + 1)] || "";
+      r.grammar = g;                       // carried to the export
+      texts.push(g);
+      const idx  = recs.indexOf(r);
+      const slot = $("exam-grammar-" + idx);
+      if (!slot) return;
+      const clean = g.replace(/\(No grammar errors found\)/i, "").trim();
+      slot.classList.remove("hidden");
+      slot.innerHTML =
+        '<div class="result-transcript-label" data-tr="Grammar Check">Grammar Check</div>' +
+        grammarPillsHTML(grammarErrorCounts(g), "") +
+        '<div class="analysis-feedback" style="margin-top:6px;">' +
+          (clean
+            ? escWithLabels(highlightGrammarChanges(g)).replace(/\n/g, "<br>")
+            : '<div class="analysis-feedback-line" data-tr="No grammar errors found — well done.">' +
+              'No grammar errors found — well done.</div>') +
+        '</div>';
+    });
+
+    const pooled = grammarPoolCounts(texts);
+    STATE._sessionGrammarPills = pooled;    // carried to the export
+    box.innerHTML = Object.keys(pooled).length
+      ? grammarPillsHTML(pooled, "Most common grammar mistakes")
+      : '<div class="analysis-feedback-line" data-tr="No grammar errors found across this session — well done.">' +
+        'No grammar errors found across this session — well done.</div>';
+
+    btn.classList.add("hidden");
+    try { translateStaticEls("#results-list"); } catch (e) {}
+  } catch (e) {
+    console.error("Session grammar check failed:", e.message);
+    box.innerHTML = '<div class="analysis-error">Grammar check failed. Please try again.</div>';
+    btn.disabled = false;
+  }
+}
+
+async function endExamSession() {
+  stopAllAudio();
+  releaseMic();
+  clearInterval(STATE.timerInterval);
+  $("saving-modal").classList.add("hidden");
+  showScreen("screen-end");
+
+  const recs = STATE.recordings.filter(r => r.stage === 5);
+
+  const heading = document.querySelector("#screen-end .results-top-bar h2");
+  if (heading) heading.textContent = "Exam Mode — Results";
+
+  const statusEl = $("transcription-status");
+  statusEl.classList.remove("hidden");
+  statusEl.textContent = "Transcribing your responses…";
+  $("end-summary").textContent = "";
+  $("results-list").innerHTML = "";
+
+  // ── Transcribe anything not already done ──
+  for (const r of recs) {
+    if (r.transcript && r.transcript.trim()) continue;
+    try {
+      const audio_base64 = await blobToBase64(r.blob);
+      const res = await fetch("/.netlify/functions/transcribe", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio_base64, filename: r.filename || "exam.webm" })
+      });
+      const data = await res.json();
+      if (res.ok) r.transcript = normalizeTranscript(data.transcript || "");
+    } catch (e) {
+      console.error("Exam transcription failed:", e.message);
+    }
+  }
+
+  // ── Band for every question, in one call ──
+  statusEl.textContent = "Scoring…";
+  const scored = recs.filter(r => r.transcript && r.transcript.trim());
+  if (scored.length) {
+    try {
+      const res = await fetch("/.netlify/functions/analyze", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questions: scored.map(r => ({ question: r.q, transcript: r.transcript })),
+          language: analysisLang(),
+          mode: "band_only"
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.parsed) {
+        scored.forEach((r, i) => {
+          const got = data.parsed["Q" + (i + 1)];
+          if (got) r.band = got.band;
+        });
+      } else {
+        console.error("Exam analysis returned no bands. Raw:", data.raw);
+      }
+    } catch (e) {
+      console.error("Exam analysis failed:", e.message);
+    }
+  }
+
+  // ── Comparison for anything below Band 5 ──
+  statusEl.textContent = "Comparing with Band 5 answers…";
+  for (const r of scored) {
+    r.sample   = practiceBand5Sample({ opening_type: r.opening_type, question_type: r.question_type });
+    r.sample_q = practiceBand5Question({ opening_type: r.opening_type, question_type: r.question_type });
+    if (typeof r.band !== "number" || r.band >= 5 || !r.sample) continue;
+    try {
+      const res = await fetch("/.netlify/functions/why-not-5-speaking", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: r.q, answer: r.transcript, sample: r.sample, band: r.band,
+          language: analysisLang(), same_topic: false, sample_question: r.sample_q
+        })
+      });
+      const data = await res.json();
+      if (res.ok) r.gap = data.explanation || "";
+    } catch (e) {
+      console.error("Exam comparison failed:", e.message);
+    }
+  }
+
+  renderExamResults(recs);
+
+  // ── Save ──
+  statusEl.textContent = "Saving to your records…";
+  const transcripts = {};
+  recs.forEach((r, i) => { transcripts[i] = r.transcript || ""; });
+  await autoDownload(transcripts);
+  await exportStage0Doc(recs);
+  statusEl.textContent = "✓ Saved to your records.";
+}
+
+// Draw the cards plus the session-wide grammar control above them.
+function renderExamResults(recs) {
+  const banded = recs.filter(r => typeof r.band === "number");
+  const avg = banded.length
+    ? (banded.reduce((sum, r) => sum + r.band, 0) / banded.length).toFixed(1)
+    : "—";
+  $("end-summary").textContent =
+    recs.length + " question" + (recs.length !== 1 ? "s" : "") + " attempted" +
+    " · Average band: " + avg +
+    (banded.length && banded.length < recs.length
+      ? " (" + banded.length + " of " + recs.length + " scored)"
+      : "");
+
+  const list = $("results-list");
+  list.innerHTML = "";
+
+  // One grammar pass for the whole session, rather than a button per card:
+  // in exam mode the student has just answered every question, so the useful
+  // view is what recurs across all of them.
+  const bar = document.createElement("div");
+  bar.id = "session-grammar-bar";
+  bar.innerHTML =
+    '<button id="btn-session-grammar" type="button" class="btn-secondary" ' +
+    'style="width:auto;padding:7px 16px;font-size:13px;" ' +
+    'data-tr="Check grammar">Check grammar</button>' +
+    '<div id="session-grammar-summary" class="hidden"></div>';
+  list.appendChild(bar);
+
+  recs.forEach((r, i) => {
+    const card = stage0ResultCard(r, 0);
+    card.id = "exam-card-" + i;
+    const slot = document.createElement("div");
+    slot.className = "card-grammar-slot hidden";
+    slot.id = "exam-grammar-" + i;
+    // Insert before the redo box so the order reads: analysis -> grammar ->
+    // re-record. The redo is the action taken after reading the feedback.
+    const redoBox = card.querySelector(".stage0-redo");
+    if (redoBox) card.insertBefore(slot, redoBox);
+    else         card.appendChild(slot);
+    list.appendChild(card);
+  });
+
+  $("btn-session-grammar").onclick = () => runSessionGrammar(recs);
+  try { translateStaticEls("#results-list"); } catch (e) {}
+}
+
 async function endStage4Session() {
+  stopAllAudio();
   releaseMic();
   clearInterval(STATE.timerInterval);
   showScreen("screen-end");
 
-  const recs   = STATE.recordings.filter(r => r.stage === 4 && !r._redoOf);
+  const recs   = STATE.recordings.filter(r => r.stage === 4);
   const banded = recs.filter(r => typeof r.band === "number");
   const avg    = banded.length
     ? (banded.reduce((sum, r) => sum + r.band, 0) / banded.length).toFixed(1)
@@ -2318,21 +2860,25 @@ async function runGrammarCheck(transcripts) {
       grammarBlock.className = "result-grammar-block";
       grammarBlock.innerHTML =
         "<div class=\"result-transcript-label\">Grammar Check</div>" +
+        grammarPillsHTML(grammarErrorCounts(grammarText), "") +
         "<div class=\"analysis-feedback\">" +
         escWithLabels(highlightGrammarChanges(grammarText)).replace(/\n/g, "<br>") +
         "</div>";
       card.appendChild(grammarBlock);
     });
 
-    // Show patterns block at bottom
-    if (grammarParsed["PATTERNS"]) {
+    // Common errors, tallied from the "Error:" labels rather than taken from the
+    // model's PATTERNS prose — the counts then reflect what was actually flagged.
+    const _pooled = grammarPoolCounts(
+      Object.keys(grammarParsed).filter(k => /^Q\d+$/.test(k)).map(k => grammarParsed[k].feedback || "")
+    );
+    STATE._sessionGrammarPills = _pooled;
+    if (Object.keys(_pooled).length) {
       const patternsDiv = document.createElement("div");
       patternsDiv.className = "result-item overall-block";
       patternsDiv.innerHTML =
-        "<div class=\"result-num\">Common Error Patterns</div>" +
-        "<div class=\"analysis-feedback\">" +
-        grammarParsed["PATTERNS"].split("\n").join("<br>") +
-        "</div>";
+        '<div class="result-num" data-tr="Most common grammar mistakes">Most common grammar mistakes</div>' +
+        grammarPillsHTML(_pooled, "");
       $("results-list").appendChild(patternsDiv);
     }
 
@@ -2524,7 +3070,62 @@ async function autoDownload(transcripts) {
 // NEW SESSION
 // ═══════════════════════════════════════════════════
 
-$("btn-new-session").onclick = () => {
+
+// Redos are held back until the student leaves the results page: while they are
+// still there, another attempt may replace what we would have uploaded. One
+// batch here covers the audio for every redone question plus a single report of
+// the final state — rather than a file per attempt.
+async function flushPendingRedos() {
+  if (!STATE._pendingRedos) return;
+  STATE._pendingRedos = false;
+
+  const redone = STATE.recordings.filter(r => r._redoOf);
+  if (!redone.length) return;
+
+  const statusEl = $("transcription-status");
+  if (statusEl) {
+    statusEl.classList.remove("hidden");
+    statusEl.textContent = "Saving your re-recordings…";
+  }
+
+  const keyPrefix = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
+  for (const r of redone) {
+    try {
+      const b64 = await blobToBase64(r.blob);
+      const up  = await uploadToDrive(r.filename, b64, "audio/webm", keyPrefix, true,
+                                      undefined, "04_speaking_interview/audio_interview");
+      if (up && up.link) r.driveLink = up.link;
+    } catch (e) {
+      console.warn("Redo audio upload failed:", e.message);
+    }
+  }
+
+  // One report of the whole results screen as it finally stood.
+  try {
+    const stage = STATE.selectedStage;
+    const finalRecs = STATE.recordings.filter(r => r.stage === stage);
+    await exportStage0Doc(finalRecs, "_redo");
+  } catch (e) {
+    console.warn("Redo report upload failed:", e.message);
+  }
+
+  if (statusEl) statusEl.textContent = "✓ Saved to your records.";
+}
+
+// Warn before leaving with redos still unsaved. The browser supplies its own
+// wording and will not let us upload during unload, so this only prompts the
+// student to leave properly via Start New Session.
+window.addEventListener("beforeunload", (e) => {
+  if (!STATE._pendingRedos) return;
+  e.preventDefault();
+  e.returnValue = "";
+  return "";
+});
+
+$("btn-new-session").onclick = async () => {
+  // Send anything the student redid before the session state is cleared.
+  await flushPendingRedos();
+
   STATE.recordings      = [];
   STATE._endCalled      = false;
   STATE.selectedStage   = null;
@@ -2845,6 +3446,9 @@ async function loadStage0Sample(sample, itemEl) {
   if (ideaStatus) ideaStatus.textContent = "";
   const ideaSel = $("s0-idea-reason-select");
   if (ideaSel) ideaSel.value = "";
+  // One typed reason per question, matching how recordings are single-slot.
+  const ideaOwn = $("s0-idea-own-input");
+  if (ideaOwn) { ideaOwn.value = ""; ideaOwn.classList.add("hidden"); }
 
   stage0BindRecordButton();
 }
@@ -3019,7 +3623,12 @@ function stage0GoldenSample() {
 async function stage0ProcessRecording() {
   if (!STAGE0_BLOB) return;
 
-  $("stage0-playback").src = URL.createObjectURL(STAGE0_BLOB);
+  // Revoke the previous URL so each take does not leak one.
+  const s0Player = $("stage0-playback");
+  if (s0Player.dataset.blobUrl) { try { URL.revokeObjectURL(s0Player.dataset.blobUrl); } catch (e) {} }
+  const s0Url = URL.createObjectURL(STAGE0_BLOB);
+  s0Player.dataset.blobUrl = s0Url;
+  s0Player.src = s0Url;
   $("stage0-results-area").classList.remove("hidden");
   $("stage0-transcript-text").textContent = "Transcribing...";
   $("stage0-transcript-label").textContent = "Transcript";
@@ -3064,6 +3673,7 @@ async function stage0ProcessRecording() {
     band: null,
     feedback: "",
     gap: "",
+    grammar: "",
     sample: stage0GoldenSample()
   };
   const existing = STATE.recordings.findIndex(r => r.stage === 0 && r.question_id === sampleId);
@@ -3108,6 +3718,21 @@ async function stage0ProcessRecording() {
       (result.band !== null
         ? '<div class="analysis-band">Band ' + result.band + ' · ' + words + ' words</div>'
         : '<div class="analysis-error">Could not score this response.</div>');
+
+    // Offer the grammar check now the score is in. Optional by design: grammar
+    // is not part of the band, so a teacher decides who needs it.
+    const s0Btn = $("btn-stage0-grammar");
+    if (s0Btn) {
+      s0Btn.classList.remove("hidden");
+      s0Btn.disabled = false;
+      s0Btn.onclick = () => runOptionalGrammar({
+        button: "btn-stage0-grammar",
+        block:  "stage0-grammar-block",
+        getQuestion:   () => entry.q,
+        getTranscript: () => STAGE0_TRANSCRIPT,
+        store: (g) => { entry.grammar = g; }   // carried to results + export
+      });
+    }
   } catch (e) {
     console.error("Stage 0 analysis failed:", e.message);
     block.innerHTML = '<div class="analysis-error">Scoring failed. Please try again.</div>';
@@ -3160,6 +3785,7 @@ $("btn-end-stage0").onclick = () => {
     endStage0Session();
   } else {
     // Nothing saved — just return to start
+    stopAllAudio();
     releaseMic();
     showScreen("screen-start");
   }
@@ -3240,10 +3866,15 @@ async function exportStage0Doc(recs, suffix) {
       ? boxed("Compared with the 5-point sample", gap, "#f7f3fa")
       : "";
 
+    // Optional grammar check, if the student ran one during practice.
+    const grammarBox = (r.grammar && r.grammar.trim())
+      ? boxed("Grammar Check", nl2br(r.grammar), "#fffdf5")
+      : "";
+
 
     // Order mirrors the results page: question -> audio -> comparison table
     // -> band -> gap analysis.
-    return header + question + links + transcript + bandLine + gapBlock + "<hr>";
+    return header + question + links + transcript + bandLine + gapBlock + grammarBox + "<hr>";
   }).join("");
 
   const isRedo = !!suffix;
@@ -3252,11 +3883,26 @@ async function exportStage0Doc(recs, suffix) {
     : `<p style="font-size:20px;font-weight:700;color:#00736b">` +
       `Average Score: ${avg} / 5 (${banded.length} of ${recs.length} scored)</p>`;
 
+  // Session-wide error tally, if a grammar check was run. Plain text rather than
+  // pills — Google Docs drops most inline styling on import.
+  let pillsHtml = "";
+  try {
+    const pooled = STATE._sessionGrammarPills || {};
+    const labels = Object.keys(pooled).sort((a, b) => pooled[b] - pooled[a]);
+    if (!isRedo && labels.length) {
+      pillsHtml =
+        `<p><strong>Most common grammar mistakes:</strong><br>` +
+        labels.slice(0, 8).map(l =>
+          `${escapeHTML(l)}${pooled[l] > 1 ? " &times;" + pooled[l] : ""}`).join(" &nbsp;&middot;&nbsp; ") +
+        `</p>`;
+    }
+  } catch (e) {}
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
     <body style="font-family:Arial,sans-serif">
       <h1>${isRedo ? "Stage 0 — Redo" : "Stage 0 — Practice Summary"}</h1>
       <p>Generated ${escapeHTML(new Date().toLocaleString())}</p>
-      ${summary}${rowsHtml}
+      ${summary}${pillsHtml}${rowsHtml}
     </body></html>`;
 
   const docName = `${sessionBaseName()}_stage0_report${suffix || ""}`;
@@ -3282,7 +3928,11 @@ function stage0ResultCard(r, attempt) {
 
   const headBits = ["Stage 0"];
   if (r.question_id) headBits.push(escapeHTML(r.question_id));
-  if (attempt) headBits.push("Redo " + attempt);
+  // How many takes this question has had. The earlier ones are replaced, not
+  // kept — a false start is not worth preserving — but the count still tells the
+  // student they have been round more than once.
+  if (r._attempts > 1) headBits.push("Attempt " + r._attempts);
+  else if (attempt)    headBits.push("Redo " + attempt);
 
   const lines = (t) => (t || "")
     .split("\n").filter(l => l.trim())
@@ -3332,6 +3982,16 @@ function stage0ResultCard(r, attempt) {
       '<div class="analysis-feedback" style="margin-top:6px;">' + gapHtml + '</div>'
     : "";
 
+  // Optional grammar check, if the student ran one.
+  const grammarBlock = (r.grammar && r.grammar.trim())
+    ? '<div class="result-analysis-block" style="margin-top:10px;border-top:1px solid #eee;padding-top:10px;">' +
+        '<div class="result-transcript-label" data-tr="Grammar Check">Grammar Check</div>' +
+        '<div class="analysis-feedback" style="margin-top:6px;">' +
+          escWithLabels(highlightGrammarChanges(r.grammar)).replace(/\n/g, "<br>") +
+        '</div>' +
+      '</div>'
+    : "";
+
   const grid = hasComparison
     ? '<table class="stage0-compare"><tbody><tr>' +
         '<td class="cmp-left">'  + answerCell + '</td>' +
@@ -3348,7 +4008,7 @@ function stage0ResultCard(r, attempt) {
       '<div class="result-audio-label" data-tr="Your Recording">Your Recording</div>' +
       '<audio controls src="' + URL.createObjectURL(r.blob) + '"></audio>' +
     '</div>' +
-    grid;
+    grid + grammarBlock;
 
 
   // Below Band 5 the student can record this question again, as often as they
@@ -3386,6 +4046,9 @@ async function stage0RunRedo(orig, attempt, card) {
 
   // Already recording -> stop early.
   if (btn.classList.contains("recording")) { redoBox._stop && redoBox._stop(); return; }
+
+  // Silence any card that is playing, so it does not bleed into the recording.
+  stopAllAudio();
 
   // The mic is released when the session ends, so re-acquire it here. This can
   // re-prompt for permission if the browser has since forgotten it.
@@ -3496,28 +4159,39 @@ async function stage0RunRedo(orig, attempt, card) {
       }
     }
 
-    STATE.recordings.push(redo);
+    // Replace the attempt rather than stacking a new card. A redo is usually a
+    // second try at the same answer — often after a false start or a fragment —
+    // so keeping every take would fill the page with attempts nobody wants.
+    // Match on stage + question rather than object identity: a second redo is
+    // handed the ORIGINAL entry, which the first redo already replaced, so
+    // indexOf would miss and the list would grow.
+    redo._attempts = (orig._attempts || 1) + 1;
+    const slotIdx = STATE.recordings.findIndex(
+      x => x.stage === redo.stage && x.question_id === redo.question_id);
+    if (slotIdx >= 0) STATE.recordings[slotIdx] = redo;
+    else              STATE.recordings.push(redo);
 
-    // Append the new card directly beneath this one, in the same format.
-    const next = stage0ResultCard(redo, attempt + 1);
-    card.insertAdjacentElement("afterend", next);
+    // Nothing is uploaded here: the student may redo again. Everything is sent
+    // in one batch when they leave for a new session.
+    STATE._pendingRedos = true;
+
+    const next = stage0ResultCard(redo, 0);
+    next.id = card.id;
+    card.replaceWith(next);
     try { translateStaticEls("#results-list"); } catch (e) {}
 
-    // This attempt is finished — drop its redo box so each card offers one redo.
-    redoBox.remove();
-
-    // Upload the redo's own audio + report, best effort.
-    status.textContent = "";
-    try {
-      const keyPrefix = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
-      const b64 = await blobToBase64(blob);
-      const up = await uploadToDrive(redo.filename, b64, "audio/webm", keyPrefix, true,
-                                    undefined, "04_speaking_interview/audio_interview");
-      if (up && up.link) redo.driveLink = up.link;
-      await exportStage0Doc([redo], "_redo" + (attempt + 1));
-    } catch (e) {
-      console.warn("Stage 0 redo upload failed:", e.message);
+    // The session grammar tally no longer covers every answer: this redo was not
+    // in it. Re-offer the check rather than leaving a stale summary on screen.
+    const sgBtn = $("btn-session-grammar"), sgBox = $("session-grammar-summary");
+    if (sgBtn && sgBox && !sgBox.classList.contains("hidden")) {
+      sgBtn.classList.remove("hidden");
+      sgBtn.disabled = false;
+      sgBox.classList.add("hidden");
+      sgBox.innerHTML = "";
+      STATE._sessionGrammarPills = null;
     }
+
+    status.textContent = "";
   };
 
   redoBox._stop = finish;
@@ -3533,14 +4207,15 @@ async function stage0RunRedo(orig, attempt, card) {
 }
 
 async function endStage0Session() {
+  stopAllAudio();
   releaseMic();
   clearInterval(STATE.timerInterval);
   $("saving-modal").classList.add("hidden");
   showScreen("screen-end");
 
-  // Redos are appended to STATE.recordings too, but the summary counts first
-  // attempts only so the average is not skewed by repeat practice.
-  const recs   = STATE.recordings.filter(r => r.stage === 0 && !r._redoOf);
+  // A redo replaces the entry for its question, so every recording here is a
+  // current answer — one per question.
+  const recs   = STATE.recordings.filter(r => r.stage === 0);
   const banded = recs.filter(r => typeof r.band === "number");
   const avg    = banded.length
     ? (banded.reduce((sum, r) => sum + r.band, 0) / banded.length).toFixed(1)

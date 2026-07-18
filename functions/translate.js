@@ -23,7 +23,7 @@ function callOpenAI(apiKey, systemPrompt, userContent, maxTokens) {
         { role: "user",   content: userContent  }
       ],
       temperature: 0.2,
-      max_tokens: maxTokens || 800
+      max_tokens: maxTokens || 2000
     });
 
     const req = https.request(
@@ -90,7 +90,19 @@ exports.handler = async (event) => {
   if (!_keys.length) {
     return { statusCode: 500, body: JSON.stringify({ error: "No OpenAI API key set (ALT_OPENAI_KEY / OPENAI_API_KEY)" }) };
   }
-  const apiKey = _keys[0];
+  // Try each usable key in turn rather than dying on the first. A bad primary
+  // otherwise takes down every translation even when a good key is present.
+  async function callWithFallback(systemPrompt, userContent, maxTokens) {
+    let lastErr;
+    for (const key of _keys) {
+      try { return await callOpenAI(key, systemPrompt, userContent, maxTokens); }
+      catch (e) {
+        lastErr = e;
+        if (e.statusCode && e.statusCode !== 401 && e.statusCode !== 403) break;
+      }
+    }
+    throw lastErr;
+  }
 
   let body;
   try { body = JSON.parse(event.body); }
@@ -117,7 +129,7 @@ exports.handler = async (event) => {
       `Return ONLY a JSON array of strings (no keys, no numbering, no commentary), with EXACTLY ${texts.length} items in the SAME order. ` +
       `Within a string, write any line breaks as \\n.\n\nItems:\n${numbered}`;
     try {
-      const raw = await callOpenAI(apiKey, TRANSLATE_SYSTEM, batchUser, 4000);
+      const raw = await callWithFallback(TRANSLATE_SYSTEM, batchUser, 4000);
       let arr;
       try {
         const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/,"").trim();
@@ -145,7 +157,7 @@ exports.handler = async (event) => {
   const userContent = `Target language: ${language.trim()}\n\nText to translate:\n${text}`;
 
   try {
-    const translation = await callOpenAI(apiKey, TRANSLATE_SYSTEM, userContent);
+    const translation = await callWithFallback(TRANSLATE_SYSTEM, userContent);
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json; charset=utf-8" },
