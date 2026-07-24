@@ -505,6 +505,7 @@ async function backgroundMicWarmup() {
     const ok = await ensureMic();
     if (!ok) return;
     await warmupAudioContext();
+    await primeAudioElement();
     startRecording();
     await sleep(3000);
     await stopRecording();       // discard warmup blob
@@ -547,6 +548,56 @@ function interviewerImageSrc(task) {
   const code = (task.interviewer_gender || "").toLowerCase();
   const isMale = code === "bm" || code === "am" || code === "male";
   return isMale ? "assets/interviewer_male.png" : "assets/interviewer_female.png";
+}
+
+// The question clips play through a plain <audio> element, which is a
+// different pipeline from the Web Audio context above. Windows can swallow
+// the opening moment of the first sound sent to an output device, so push a
+// short silent clip through that same element before any real audio.
+let audioElementPrimed = false;
+
+// 0.25s of silence, so the device is already open when Q1 starts.
+const SILENT_MP3 = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//tAwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8A"
+  + "AAANAAAGBAAvLy8vLy8vQEBAQEBAQEBSUlJSUlJSUmNjY2NjY2N1dXV1dXV1dYaGhoaGhoaGl5eXl5eXl6mpqampqampurq6urq6"
+  + "urrLy8vLy8vL3d3d3d3d3d3u7u7u7u7u7v////////8AAAAATGF2YzYwLjMxAAAAAAAAAAAAAAAAJASSAAAAAAAABgRY2NC4AAAA"
+  + "AAD/+xDEAAPAAAGkAAAAIAAANIAAAARMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVf/7EsQpg8AAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVf/7EMRTg8AAAaQAAAAg"
+  + "AAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVMQU1FMy4xMDBV//sSxH0DwAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBV//sQxKcDwAABpAAAACAAADSAAAAEVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFX/"
+  + "+xLE0IPAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFX/+xDE1gPAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVf/7EsTVg8AAAaQAAAAgAAA0"
+  + "gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVf/7EMTWA8AAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sSxNWDwAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQ"
+  + "xNYDwAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+xLE1YPAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+xDE1gPAAAGkAAAAIAAANIAA"
+  + "AARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+  + "VVVVVVVVVVVVVQ==";
+
+async function primeAudioElement() {
+  if (audioElementPrimed) return;
+  audioElementPrimed = true;
+  try {
+    const audio = $("question-audio-player");
+    if (!audio) return;
+    const prevSrc = audio.src;
+    audio.src = SILENT_MP3;
+    audio.load();
+    await audio.play().catch(() => {});
+    // Give the output device a moment to actually open.
+    await sleep(250);
+    audio.pause();
+    audio.currentTime = 0;
+    if (prevSrc) audio.src = prevSrc; else audio.removeAttribute("src");
+  } catch (e) {
+    console.log("Audio element priming failed:", e);
+  }
 }
 
 async function warmupAudioContext() {
@@ -1799,6 +1850,7 @@ async function runMicWarmup() {
 
   $("warmup-status").textContent = "Setting up... please do not speak yet.";
   await warmupAudioContext();
+  await primeAudioElement();
   startRecording();
   await sleep(3000);
   await stopRecording(); // discard warmup blob
@@ -1941,6 +1993,7 @@ async function startPractice() {
   // audio doesn't get its opening clipped. (Matches the mock-test tool's fix.)
   if (!STATE.audioPrimed) {
     await warmupAudioContext();
+    await primeAudioElement();
     STATE.audioPrimed = true;
     await sleep(200);
   }
@@ -2118,6 +2171,7 @@ async function runExamSession(task) {
   // Prime the audio OUTPUT pipeline once so the first audio isn't clipped.
   if (!STATE.audioPrimed) {
     await warmupAudioContext();
+    await primeAudioElement();
     STATE.audioPrimed = true;
     await sleep(200);
   }
