@@ -549,9 +549,18 @@ function interviewerImageSrc(task) {
   return isMale ? "assets/interviewer_male.png" : "assets/interviewer_female.png";
 }
 
+let audioContextWarmed = false;
+
 async function warmupAudioContext() {
+  // Run once, and close the context afterwards. Leaving contexts open (this
+  // used to be called from four places, each creating a new one) attenuates
+  // the start of audio played through the <audio> element — the very problem
+  // this warmup was meant to prevent.
+  if (audioContextWarmed) return;
+  audioContextWarmed = true;
+  let ctx = null;
   try {
-    const ctx    = new (window.AudioContext || window.webkitAudioContext)();
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
     const buffer = ctx.createBuffer(1, 1, 22050);
     const source = ctx.createBufferSource();
     source.buffer = buffer;
@@ -560,6 +569,8 @@ async function warmupAudioContext() {
     await ctx.resume();
   } catch(e) {
     console.log("Audio warmup failed:", e);
+  } finally {
+    if (ctx) { try { await ctx.close(); } catch (e) { /* already closed */ } }
   }
 }
 
