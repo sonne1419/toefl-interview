@@ -80,7 +80,9 @@ const STATE = {
   _lastTranscript:   "",
   _lastBand:         null,
   _lastGap:          "",
-  _lastGrammar:      ""
+  _lastGrammar:      "",
+  _gradePromise:     null,  // in-flight grading, awaited before Save & Next
+  _sessionFileId:    null   // Drive file for this session's report; redos update it
 };
 
 // ═══════════════════════════════════════════════════
@@ -793,13 +795,15 @@ async function warmUpTranslations() {
   set.add("Show sample");
   // The Stage 0 results page is built after End Session, so its labels are not
   // in the DOM during warm-up. Add them explicitly to avoid an English flash.
-  ["Your answer", "(not scored)", "Your Recording",
+  ["Your answer", "Not scored — try recording this one again.", "Your Recording",
    "5-point sample answer benchmark", "Compared with the 5-point sample",
    "Band 5 sample answer (a different question)", "Compared with a Band 5 answer",
+   "About the third column",
    "Grammar Check", "No grammar errors found — well done.", "Optional grammar check",
    "Check grammar", "Most common grammar mistakes",
    "No grammar errors found across this session — well done.",
    "I'll use my own idea", "Type your reason first.", "Type your reason…",
+   "Pick a reason and generate ideas", "Generate",
    "The sample answers a different question:", "It answers:",
    "Try this question again",
    "Re-record your answer and compare it with the 5-point sample again. You have 45 seconds."
@@ -897,13 +901,50 @@ function getRunLabel(keyPrefix, stage, qid) {
 // AUDIO — matches playAudioReliable pattern
 // ═══════════════════════════════════════════════════
 
+// Fetched clips, keyed by source path. Downloading a clip in full before
+// playing it means playback can never outrun the network and stall mid-word.
+const audioBlobCache = new Map();
+const AUDIO_CACHE_LIMIT = 12;
+
+function cacheAudioBlobUrl(src, url) {
+  audioBlobCache.set(src, url);
+  // Release the oldest entries so a long session cannot grow without bound.
+  while (audioBlobCache.size > AUDIO_CACHE_LIMIT) {
+    const oldest = audioBlobCache.keys().next().value;
+    const oldUrl = audioBlobCache.get(oldest);
+    audioBlobCache.delete(oldest);
+    try { URL.revokeObjectURL(oldUrl); } catch (e) { /* already released */ }
+  }
+}
+
+// Resolves to a local object URL, or to the original src if the download
+// fails so a network hiccup still leaves the question playable.
+async function resolveAudioSrc(src) {
+  if (audioBlobCache.has(src)) return audioBlobCache.get(src);
+  try {
+    const res = await fetch(src);
+    if (!res.ok) return src;
+    const url = URL.createObjectURL(await res.blob());
+    cacheAudioBlobUrl(src, url);
+    return url;
+  } catch (e) {
+    return src;
+  }
+}
+
+// Fetch every clip in a set up front. Four short clips download while the
+// student is still reading the intro, so no question waits on the network.
+function prefetchSetAudio(task, questions) {
+  if (task && task.intro_audio) resolveAudioSrc(task.intro_audio);
+  (questions || []).forEach(q => { if (q && q.audio) resolveAudioSrc(q.audio); });
+}
+
 function playAudioReliable(src) {
   return new Promise(resolve => {
     if (!src) { resolve(); return; }
     const audio = $("question-audio-player");
     audio.pause();
     audio.currentTime = 0;
-    audio.src = src;
     audio.volume = 1.0;
 
     STATE._audioResolve = resolve;
@@ -917,17 +958,22 @@ function playAudioReliable(src) {
       resolve();
     }
 
-    audio.onended = cleanup;
-    audio.onerror = cleanup;
-    audio.oncanplaythrough = () => {
-      STATE._audioPlayTimer = setTimeout(() => {
-        STATE._audioPlayTimer = null;
+    // Download the whole clip first so playback cannot outrun the network.
+    resolveAudioSrc(src).then(playableSrc => {
+      // Session ended or the student moved on while the clip downloaded.
+      if (STATE._audioResolve !== resolve) return;
+
+      audio.src = playableSrc;
+      audio.onended = cleanup;
+      audio.onerror = cleanup;
+      audio.oncanplaythrough = () => {
+        audio.oncanplaythrough = null;
         // If playback was aborted (End Session), don't start playing.
-        if (STATE._audioResolve === null) return;
+        if (STATE._audioResolve !== resolve) return;
         audio.play().catch(() => cleanup());
-      }, 800);
-    };
-    audio.load();
+      };
+      audio.load();
+    });
   });
 }
 
@@ -1080,7 +1126,9 @@ function showPostRecordButtons() {
   // block cannot be banded). Stage 5 is exam mode and stays unmarked.
   const st = STATE.selectedStage;
   if (STATE._lastBlob && st !== 5 && st !== 0) {
-    practiceGradeTake(STATE._lastBlob);
+    // Keep the promise: Save & Next must wait for it, or the recording is stored
+    // before the band arrives and the results card has no score (and so no redo).
+    STATE._gradePromise = practiceGradeTake(STATE._lastBlob);
   }
 }
 
@@ -1448,7 +1496,20 @@ async function waitForSaveOrRerecord(responseTime) {
     // Wait for either button
     const action = await new Promise(resolve => {
       STATE._saveResolve = resolve;
-      $("btn-save-next").onclick   = () => { STATE._saveResolve = null; resolve("save"); };
+      $("btn-save-next").onclick   = async () => {
+        // Let the grade land first, so band/gap/grammar are stored with the take.
+        const btn = $("btn-save-next");
+        if (STATE._gradePromise) {
+          btn.disabled = true;
+          const prev = btn.textContent;
+          btn.textContent = "Scoring…";
+          try { await STATE._gradePromise; } catch (e) {}
+          btn.textContent = prev;
+          btn.disabled = false;
+        }
+        STATE._saveResolve = null;
+        resolve("save");
+      };
       $("btn-record-again").onclick = () => { STATE._saveResolve = null; resolve("rerecord"); };
     });
 
@@ -1863,7 +1924,7 @@ function saveRecording(blob) {
   });
   // Clear so the next question cannot inherit this take's result.
   STATE._lastTranscript = ""; STATE._lastBand = null; STATE._lastGap = "";
-  STATE._lastGrammar = "";
+  STATE._lastGrammar = ""; STATE._gradePromise = null;
 }
 
 
@@ -1928,6 +1989,9 @@ async function startPractice() {
 
   const questions    = task.questions || [];
   const responseTime = stage === 4 ? (task.response_time || 45) : STAGE_TIME[stage];
+
+  // Download every clip in the set now, while the student is still reading.
+  prefetchSetAudio(task, questions);
 
   // Optional starting question index (from the browse list). Default 0.
   let _startAt = STATE._startQIndex || 0;
@@ -2047,6 +2111,9 @@ async function startPractice() {
 async function runExamSession(task) {
   const questions    = task.questions || [];
   const responseTime = task.response_time || 45;
+
+  // Download every clip in the set now, while the student is still reading.
+  prefetchSetAudio(task, questions);
 
   // Prime the audio OUTPUT pipeline once so the first audio isn't clipped.
   if (!STATE.audioPrimed) {
@@ -2264,7 +2331,7 @@ function renderPracticeSupport(task, question, stage) {
   const area4 = area4Lines.join("\n").trim();
 
   // Render areas — skip empty. area2 (the reasons list) is intentionally omitted;
-  // the same reasons are available in the "Help me with ideas" dropdown.
+  // the same reasons are available in the idea-generation dropdown.
   // area3 is a full worked answer to a DIFFERENT question. Showing it beside the
   // current question makes students think it is the model answer for THIS one,
   // so it is kept out of the practice view. It still appears on the results page
@@ -2919,12 +2986,14 @@ function sessionBaseName() {
   return [keyPrefix, "interview", stagePart, testPart, date].filter(Boolean).join("_");
 }
 
-async function uploadToDrive(filename, content, mimeType, studentKey, isBase64 = false, convertTo, subfolder) {
+// fileId updates an existing Drive file instead of creating another — used so a
+// redo rewrites the session report rather than adding a near-identical copy.
+async function uploadToDrive(filename, content, mimeType, studentKey, isBase64 = false, convertTo, subfolder, fileId) {
   try {
     const res  = await fetch("/.netlify/functions/upload-to-drive", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename, content, mimeType, studentKey, isBase64, convertTo, subfolder })
+      body: JSON.stringify({ filename, content, mimeType, studentKey, isBase64, convertTo, subfolder, fileId })
     });
     const data = await res.json();
     if (!res.ok || !data.success) { console.error("Drive upload failed:", data.error || res.status); return null; }
@@ -3071,61 +3140,10 @@ async function autoDownload(transcripts) {
 // ═══════════════════════════════════════════════════
 
 
-// Redos are held back until the student leaves the results page: while they are
-// still there, another attempt may replace what we would have uploaded. One
-// batch here covers the audio for every redone question plus a single report of
-// the final state — rather than a file per attempt.
-async function flushPendingRedos() {
-  if (!STATE._pendingRedos) return;
-  STATE._pendingRedos = false;
-
-  const redone = STATE.recordings.filter(r => r._redoOf);
-  if (!redone.length) return;
-
-  const statusEl = $("transcription-status");
-  if (statusEl) {
-    statusEl.classList.remove("hidden");
-    statusEl.textContent = "Saving your re-recordings…";
-  }
-
-  const keyPrefix = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
-  for (const r of redone) {
-    try {
-      const b64 = await blobToBase64(r.blob);
-      const up  = await uploadToDrive(r.filename, b64, "audio/webm", keyPrefix, true,
-                                      undefined, "04_speaking_interview/audio_interview");
-      if (up && up.link) r.driveLink = up.link;
-    } catch (e) {
-      console.warn("Redo audio upload failed:", e.message);
-    }
-  }
-
-  // One report of the whole results screen as it finally stood.
-  try {
-    const stage = STATE.selectedStage;
-    const finalRecs = STATE.recordings.filter(r => r.stage === stage);
-    await exportStage0Doc(finalRecs, "_redo");
-  } catch (e) {
-    console.warn("Redo report upload failed:", e.message);
-  }
-
-  if (statusEl) statusEl.textContent = "✓ Saved to your records.";
-}
-
-// Warn before leaving with redos still unsaved. The browser supplies its own
-// wording and will not let us upload during unload, so this only prompts the
-// student to leave properly via Start New Session.
-window.addEventListener("beforeunload", (e) => {
-  if (!STATE._pendingRedos) return;
-  e.preventDefault();
-  e.returnValue = "";
-  return "";
-});
-
-$("btn-new-session").onclick = async () => {
-  // Send anything the student redid before the session state is cleared.
-  await flushPendingRedos();
-
+$("btn-new-session").onclick = () => {
+  // Each redo already saved itself, so there is nothing to flush here. Clearing
+  // the file id means the next session creates its own report.
+  STATE._sessionFileId  = null;
   STATE.recordings      = [];
   STATE._endCalled      = false;
   STATE.selectedStage   = null;
@@ -3317,6 +3335,17 @@ function stage0IsEnglish() {
   return STAGE0_LANG === "en" || !lang || lang.toLowerCase() === "english";
 }
 
+// The sample's own logic, shown above its text so the shape is visible before
+// the sentences. Translatable like the sample itself.
+function renderStage0Structure(el) {
+  if (!el) return;
+  const en = el.dataset.en || "";
+  if (!en) { el.textContent = ""; el.style.display = "none"; return; }
+  el.style.display = "";
+  if (stage0IsEnglish()) el.innerHTML = escapeHTML(en).replace(/\n/g, "<br>");
+  else translateUI(en, el, true);
+}
+
 function renderStage0Full(el) {
   if (!el) return;
   const en = el.dataset.en || "";
@@ -3348,6 +3377,7 @@ function setStage0Lang(lang) {
   STAGE0_LANG = (lang === "en") ? "en" : "native";
   renderStage0Question();
   [1, 2, 3].forEach(i => {
+    renderStage0Structure($(`stage0-structure-${i}`));
     renderStage0Full($(`stage0-full-${i}`));
   });
   updateStage0LangToggle();
@@ -3398,10 +3428,9 @@ async function loadStage0Sample(sample, itemEl) {
     [3, blocks.after_example],
   ];
   pairs.forEach(([i, b]) => {
-    // The "Answer Structure" column was removed — the full sentence already
-    // demonstrates the answer structure, and the Idea Spine column carries the
-    // generated logic frame. blocks.*.structure is left unused.
-    $(`stage0-full-${i}`).dataset.en = b ? (b.full || "") : "";
+    $(`stage0-structure-${i}`).dataset.en = b ? (b.structure || "") : "";
+    $(`stage0-full-${i}`).dataset.en      = b ? (b.full || "")      : "";
+    renderStage0Structure($(`stage0-structure-${i}`));
     renderStage0Full($(`stage0-full-${i}`));
   });
   updateStage0LangToggle();
@@ -3415,7 +3444,7 @@ async function loadStage0Sample(sample, itemEl) {
   const modelWords = fullText.trim() ? fullText.trim().split(/\s+/).length : 0;
   $("stage0-word-count").textContent = modelWords;
 
-  document.querySelectorAll(".stage0-full").forEach(el => el.style.visibility = "");
+  document.querySelectorAll(".stage0-full-text").forEach(el => el.style.visibility = "");
   $("stage0-full-header").style.visibility = "";
   $("stage0-table-area").classList.remove("hidden");
 
@@ -3477,7 +3506,7 @@ function highlightPhrases(text, phrases) {
 }
 
 function setStage0FullVisible(show) {
-  document.querySelectorAll(".stage0-full").forEach(el => el.style.visibility = show ? "" : "hidden");
+  document.querySelectorAll(".stage0-full-text").forEach(el => el.style.visibility = show ? "" : "hidden");
   // Hide only the column's label — NOT the whole <th>, because the toggle now
   // lives inside that header cell and must stay clickable so the student can
   // turn the sample back on mid-practice.
@@ -3803,7 +3832,10 @@ $("btn-end-stage0").onclick = () => {
 // ═══════════════════════════════════════════════════
 
 async function exportStage0Doc(recs, suffix) {
+  // Nothing recorded means nothing to report. Uploading an empty document — and
+  // saying it saved — is worse than saying nothing happened.
   if (!recs || !recs.length) return;
+  if (!recs.some(r => (r.transcript && r.transcript.trim()) || r.blob)) return;
   const studentKey = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
 
   const banded = recs.filter(r => typeof r.band === "number");
@@ -3905,14 +3937,19 @@ async function exportStage0Doc(recs, suffix) {
       ${summary}${pillsHtml}${rowsHtml}
     </body></html>`;
 
-  const docName = `${sessionBaseName()}_stage0_report${suffix || ""}`;
+  const docName = `${sessionBaseName()}_stage0_report`;
   try {
-    await uploadToDrive(
+    // One document per session. The first call creates it and keeps the id; a
+    // redo re-renders the whole report and PATCHes the same file, so closing the
+    // tab is safe at any point and Drive does not fill with near-identical copies.
+    const up = await uploadToDrive(
       docName, html, "text/html", studentKey,
       false,
       "application/vnd.google-apps.document",
-      "04_speaking_interview"
+      "04_speaking_interview",
+      STATE._sessionFileId || null
     );
+    if (up && up.fileId) STATE._sessionFileId = up.fileId;
   } catch (e) {
     console.warn("Stage 0 report upload failed:", e.message);
   }
@@ -3952,7 +3989,8 @@ function stage0ResultCard(r, attempt) {
   const bandHtml = (typeof r.band === "number")
     ? '<div class="analysis-band">Band ' + r.band + ' · ' +
       countWords(r.transcript || "") + ' words</div>'
-    : '<div class="analysis-feedback-line" data-tr="(not scored)">(not scored)</div>';
+    : '<div class="analysis-feedback-line" data-tr="Not scored — try recording this one again.">' +
+      'Not scored — try recording this one again.</div>';
 
   const answerCell =
     '<div class="result-transcript-label">' +
@@ -4012,8 +4050,10 @@ function stage0ResultCard(r, attempt) {
 
 
   // Below Band 5 the student can record this question again, as often as they
-  // like. Each redo appends a new card beneath this one.
-  if (typeof r.band === "number" && r.band !== 5) {
+  // like. A redo replaces this card rather than adding another.
+  // An unscored answer gets one too: without it the card would offer nothing at
+  // all, which reads as a broken page rather than a failed grade.
+  if (r.band !== 5) {
     const redo = document.createElement("div");
     redo.className = "stage0-redo";
     redo.innerHTML =
@@ -4046,6 +4086,9 @@ async function stage0RunRedo(orig, attempt, card) {
 
   // Already recording -> stop early.
   if (btn.classList.contains("recording")) { redoBox._stop && redoBox._stop(); return; }
+
+  // A save from the previous attempt may still be running.
+  if (btn.disabled) return;
 
   // Silence any card that is playing, so it does not bleed into the recording.
   stopAllAudio();
@@ -4171,9 +4214,9 @@ async function stage0RunRedo(orig, attempt, card) {
     if (slotIdx >= 0) STATE.recordings[slotIdx] = redo;
     else              STATE.recordings.push(redo);
 
-    // Nothing is uploaded here: the student may redo again. Everything is sent
-    // in one batch when they leave for a new session.
-    STATE._pendingRedos = true;
+    // Save straight away, updating the same session report. Waiting until the
+    // student leaves loses the work when they close the tab instead — and they
+    // usually do, since there is no logout.
 
     const next = stage0ResultCard(redo, 0);
     next.id = card.id;
@@ -4191,7 +4234,31 @@ async function stage0RunRedo(orig, attempt, card) {
       STATE._sessionGrammarPills = null;
     }
 
-    status.textContent = "";
+    // Upload the take, then rewrite the session report to include it.
+    // The old card has been replaced, so its status element is detached — write
+    // to the NEW card, and lock its redo button until the save finishes or the
+    // student can start another recording mid-upload.
+    const liveStatus = next.querySelector(".stage0-redo-status");
+    const liveBtn    = next.querySelector(".stage0-redo-btn");
+    if (liveBtn) { liveBtn.disabled = true; liveBtn.classList.remove("pulse"); }
+    if (liveStatus) liveStatus.textContent = "Saving…";
+
+    try {
+      const keyPrefix = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
+      const b64 = await blobToBase64(blob);
+      const up  = await uploadToDrive(redo.filename, b64, "audio/webm", keyPrefix, true,
+                                      undefined, "04_speaking_interview/audio_interview");
+      if (up && up.link) redo.driveLink = up.link;
+
+      const stageRecs = STATE.recordings.filter(x => x.stage === redo.stage);
+      await exportStage0Doc(stageRecs);
+      if (liveStatus) liveStatus.textContent = "✓ Saved.";
+    } catch (e) {
+      console.warn("Redo save failed:", e.message);
+      if (liveStatus) liveStatus.textContent = "Could not save — please try again.";
+    } finally {
+      if (liveBtn) { liveBtn.disabled = false; liveBtn.classList.add("pulse"); }
+    }
   };
 
   redoBox._stop = finish;
