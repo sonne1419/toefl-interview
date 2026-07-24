@@ -809,6 +809,8 @@ async function warmUpTranslations() {
   ["Your answer", "Not scored — try recording this one again.", "Your Recording",
    "5-point sample answer benchmark", "Compared with the 5-point sample",
    "Band 5 sample answer (a different question)", "Compared with a Band 5 answer",
+   "Compared with the sample above", "Comparing with the sample above…",
+   "Could not compare with the sample above.",
    "About the third column",
    "Grammar Check", "No grammar errors found — well done.", "Optional grammar check",
    "Check grammar", "Most common grammar mistakes",
@@ -3784,7 +3786,8 @@ async function stage0ProcessRecording() {
   if (typeof band !== "number" || band >= 5 || !sample) return;
 
   const gapBlock = $("stage0-gap-block");
-  gapBlock.innerHTML = '<div class="analysis-feedback">Comparing with a strong answer…</div>';
+  gapBlock.innerHTML = '<div class="analysis-feedback" data-tr="Comparing with the sample above…">Comparing with the sample above…</div>';
+  try { translateStaticEls("#stage0-gap-block"); } catch (e) {}
   gapBlock.classList.remove("hidden");
 
   try {
@@ -3804,7 +3807,7 @@ async function stage0ProcessRecording() {
 
     entry.gap = data.explanation || "";
     gapBlock.innerHTML =
-      '<div class="result-transcript-label">Compared with a strong answer</div>' +
+      '<div class="result-transcript-label" data-tr="Compared with the sample above">Compared with the sample above</div>' +
       '<div class="analysis-feedback" style="margin-top:6px;">' +
         (entry.gap)
           .split("\n")
@@ -3812,9 +3815,11 @@ async function stage0ProcessRecording() {
           .map(l => '<div class="analysis-feedback-line">' + escapeHTML(l) + '</div>')
           .join("") +
       '</div>';
+    try { translateStaticEls("#stage0-gap-block"); } catch (e) {}
   } catch (e) {
     console.error("Stage 0 gap analysis failed:", e.message);
-    gapBlock.innerHTML = '<div class="analysis-error">Could not compare with a strong answer.</div>';
+    gapBlock.innerHTML = '<div class="analysis-error" data-tr="Could not compare with the sample above.">Could not compare with the sample above.</div>';
+    try { translateStaticEls("#stage0-gap-block"); } catch (e) {}
   }
 }
 
