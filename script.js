@@ -304,6 +304,10 @@ function initInterviewControls() {
   if (sel && !sel._wired) {
     sel._wired = true;
     sel.addEventListener("change", function () {
+      // Prime inside the click/change gesture: browsers only grant autoplay
+      // permission to an element that has played during a user interaction.
+      // Without this the first auto-played question can lose its opening.
+      primeAudioElement();
       if (sel.value && sel.value !== "──────────") switchInterviewTest(sel.value);
     });
   }
@@ -582,16 +586,22 @@ const SILENT_MP3 = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwL
 
 async function primeAudioElement() {
   if (audioElementPrimed) return;
-  audioElementPrimed = true;
   try {
     const audio = $("question-audio-player");
     if (!audio) return;
     const prevSrc = audio.src;
     audio.src = SILENT_MP3;
     audio.load();
-    await audio.play().catch(() => {});
-    // Give the output device a moment to actually open.
-    await sleep(250);
+    // play() rejects when the browser blocks autoplay. Only treat the element
+    // as primed if it actually played, so a blocked attempt outside a user
+    // gesture doesn't stop a later gesture-driven attempt from running.
+    let played = true;
+    await audio.play().catch(() => { played = false; });
+    if (played) {
+      audioElementPrimed = true;
+      // Give the output device a moment to actually open.
+      await sleep(250);
+    }
     audio.pause();
     audio.currentTime = 0;
     if (prevSrc) audio.src = prevSrc; else audio.removeAttribute("src");
@@ -1748,6 +1758,9 @@ function showStageBlurb() {
 }
 
 $("btn-start-session").onclick = async () => {
+  // Prime inside the click gesture — see primeAudioElement().
+  primeAudioElement();
+
   const testFile = $("test-selector").value;
   const stageVal = $("stage-selector").value;
   const stage    = stageVal === "" ? null : parseInt(stageVal);
