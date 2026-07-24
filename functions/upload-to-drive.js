@@ -100,7 +100,7 @@ async function findOrCreateFolder(token, name, parentId) {
   return existing || createFolder(token, name, parentId);
 }
 
-async function uploadFile(token, filename, content, mimeType, parentId, isBase64, convertTo) {
+async function uploadFile(token, filename, content, mimeType, parentId, isBase64, convertTo, fileId) {
   // Detect binary files by MIME type — don't rely solely on isBase64 flag
   const isTextMime = !mimeType ||
     mimeType.startsWith("text/") ||
@@ -113,7 +113,11 @@ async function uploadFile(token, filename, content, mimeType, parentId, isBase64
 
   // convertTo (e.g. application/vnd.google-apps.document) makes Drive store the
   // uploaded HTML as a native, editable Google Doc instead of a raw .html file.
-  const metaObj = { name: filename, parents: [parentId] };
+  // With a fileId we PATCH the existing file instead of creating another, so a
+  // student who redoes an answer updates one document rather than accumulating
+  // near-identical copies. Drive rejects `parents` on update — moving a file
+  // needs addParents/removeParents — so it is omitted there.
+  const metaObj = fileId ? { name: filename } : { name: filename, parents: [parentId] };
   if (convertTo) metaObj.mimeType = convertTo;
   const meta      = JSON.stringify(metaObj);
   const boundary  = "boundary_" + Date.now();
@@ -130,8 +134,9 @@ async function uploadFile(token, filename, content, mimeType, parentId, isBase64
   const res = await new Promise((resolve, reject) => {
     const req = https.request({
       hostname: "www.googleapis.com",
-      path:     "/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink",
-      method:   "POST",
+      path:     "/upload/drive/v3/files" + (fileId ? "/" + fileId : "") +
+                "?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink",
+      method:   fileId ? "PATCH" : "POST",
       headers:  {
         Authorization:    `Bearer ${token}`,
         "Content-Type":   `multipart/related; boundary=${boundary}`,
@@ -148,7 +153,15 @@ async function uploadFile(token, filename, content, mimeType, parentId, isBase64
   });
 
   const data = JSON.parse(res.body);
-  if (!data.id) throw new Error("Upload failed: " + res.body);
+  if (!data.id) {
+    // The file may have been deleted or moved out of reach since it was made.
+    // Better a second document than lost work.
+    if (fileId) {
+      console.warn("Drive update failed for " + fileId + ", creating instead:", res.body.slice(0, 200));
+      return uploadFile(token, filename, content, mimeType, parentId, isBase64, convertTo, null);
+    }
+    throw new Error("Upload failed: " + res.body);
+  }
   return data;
 }
 
@@ -160,7 +173,8 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch(e) { return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body" }) }; }
 
-  const { filename, content, mimeType = "text/plain", studentKey, isBase64 = false, convertTo, subfolder } = body;
+  const { filename, content, mimeType = "text/plain", studentKey, isBase64 = false,
+          convertTo, subfolder, fileId } = body;
   if (!filename || !content)
     return { statusCode: 400, body: JSON.stringify({ error: "filename and content required" }) };
 
@@ -181,7 +195,8 @@ exports.handler = async (event) => {
       }
     }
 
-    const uploaded = await uploadFile(token, filename, content, mimeType, parentId, isBase64, convertTo);
+    const uploaded = await uploadFile(token, filename, content, mimeType, parentId,
+                                      isBase64, convertTo, fileId || null);
 
     return {
       statusCode: 200,
