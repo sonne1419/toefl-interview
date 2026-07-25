@@ -1429,7 +1429,8 @@ audio { height: 34px; min-width: 200px; }
   background: #f2e6f8;
 }
 
-#stage0-timer-box {
+#stage0-timer-box,
+#ownq-timer-box {
   border: 1.5px solid #c0392b;
   border-radius: 8px;
   overflow: hidden;
@@ -1438,7 +1439,8 @@ audio { height: 34px; min-width: 200px; }
   margin-top: 8px;
 }
 
-#stage0-timer-label {
+#stage0-timer-label,
+#ownq-timer-label {
   background: #c0392b;
   color: white;
   font-size: 10px;
@@ -1448,7 +1450,8 @@ audio { height: 34px; min-width: 200px; }
   font-family: 'Arial', sans-serif;
 }
 
-#stage0-timer-value {
+#stage0-timer-value,
+#ownq-timer-value {
   font-size: 22px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;

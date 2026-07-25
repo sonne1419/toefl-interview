@@ -90,6 +90,15 @@
 
     <div id="start-status" class="status-line"></div>
     <button id="btn-start-session" class="btn-primary" disabled>Start Session →</button>
+
+    <!-- Separate entry: needs no stage and no test, so it sits outside the
+         selector flow rather than inside the stage dropdown. -->
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e5e5e5;text-align:center;">
+      <button id="btn-start-ownq" type="button"
+        style="background:none;border:1px solid #00736b;color:#00736b;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;"
+        data-tr="Bring your own question →">Bring your own question →</button>
+      <div style="font-size:11.5px;color:#888;margin-top:6px;line-height:1.5;" data-tr="Bring your own question and speak a full answer. Scored, with a grammar check.">Bring your own question and speak a full answer. Scored, with a grammar check.</div>
+    </div>
   </div>
 </div>
 
@@ -330,6 +339,143 @@
             style="width:auto;padding:6px 14px;font-size:12px;margin-top:10px;"
             data-tr="Optional grammar check">Optional grammar check</button>
           <div id="stage0-grammar-block" class="result-analysis-block hidden"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <div class="screen-footer" style="text-align:center;padding:8px 20px;font-size:12px;color:#888;border-top:1px solid #eee;flex-shrink:0;">Click <strong>End Session</strong> in the upper right corner to exit and download your practice record.</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: YOUR OWN QUESTION
+     Student types their own question; one fixed reference structure
+     (free-ending skeleton, English only) plus the idea panel. No sample,
+     no sample picker, no gap comparison.
+═══════════════════════════════════════ -->
+<div id="screen-ownq" class="screen hidden">
+
+  <div id="stage0-header">
+    <div id="stage0-section-label" data-tr="Your Own Question">Your Own Question</div>
+    <button id="btn-end-ownq" class="btn-end">End Session</button>
+  </div>
+
+  <div id="stage0-body" style="display:block;">
+    <div id="stage0-content-panel">
+
+      <div id="ownq-instructions" style="background:#f0f9f8;border:1px solid #b2dbd8;border-radius:10px;margin-bottom:16px;overflow:hidden;">
+        <div id="ownq-instr-bar" onclick="toggleOwnQInstructions()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;user-select:none;">
+          <span style="font-weight:700;font-size:13px;color:#00736b;">📖 <span data-tr="How to use this page">How to use this page</span></span>
+          <span id="ownq-instr-chevron" style="font-size:13px;color:#00736b;transition:transform .25s;">▼</span>
+        </div>
+        <div id="ownq-instr-body" style="padding:0 16px 14px 16px;font-size:13.5px;line-height:1.7;color:#1a1a1a;">
+          <div style="margin-bottom:8px;" data-tr="Type or paste your own question at the top and record a full answer.">Type or paste your own question at the top and record a full answer.</div>
+          <div style="margin-bottom:8px;" data-tr="You have 45 seconds. Scoring starts on its own as soon as you stop.">You have 45 seconds. Scoring starts on its own as soon as you stop.</div>
+          <div style="color:#555;font-size:12.5px;" data-tr="💡 Stuck? Pick a reason and press Help me with ideas — it works from your question.">💡 Stuck? Pick a reason and press Help me with ideas — it works from your question.</div>
+          <div style="margin-top:12px;">
+            <button onclick="window.toggleOwnQInstructions()" data-tr="Got it, let's start →" style="background:#00736b;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;">Got it, let's start →</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="ownq-question-area" class="practice-card" style="margin-bottom:12px;">
+        <div class="practice-card-title" data-tr="Your question">Your question</div>
+        <textarea id="ownq-question-input" rows="2"
+          placeholder="Type or paste your question here…" data-tr-placeholder="Type or paste your question here…"
+          spellcheck="false"
+          style="width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #ccc;border-radius:8px;font-size:14px;font-family:inherit;line-height:1.5;resize:vertical;"></textarea>
+        <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div id="ownq-saved-count" class="hidden" style="font-size:11.5px;color:#888;"><span id="ownq-saved-n"></span> <span data-tr="saved this session">saved this session</span></div>
+          <button id="btn-ownq-new-question" type="button"
+            style="background:none;border:1px solid #00736b;color:#00736b;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;"
+            data-tr="Type a new question">Type a new question</button>
+        </div>
+      </div>
+
+      <div id="ownq-table-area" class="practice-card">
+
+        <table class="stage0-table">
+          <thead>
+            <tr>
+              <th style="width:120px;vertical-align:top;" data-tr="Answer part">Block</th>
+              <th style="width:44%;vertical-align:top;">
+                <div data-tr="Reference structure">Reference structure</div>
+              </th>
+              <th style="width:40%;vertical-align:top;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                  <span data-tr="Pick a reason and generate ideas"
+                    style="text-transform:none;letter-spacing:normal;font-weight:600;">Pick a reason and generate ideas</span>
+                  <button id="oq-btn-idea-fill" type="button"
+                    style="padding:4px 10px;border:1px solid #8e44ad;background:#faf5fc;color:#8e44ad;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;text-transform:none;letter-spacing:normal;flex-shrink:0;" data-tr="Help me with ideas">Help me with ideas</button>
+                </div>
+                <div style="margin-top:6px;">
+                  <select id="oq-idea-reason-select"
+                    style="width:100%;padding:4px 6px;border:1px solid #ccc;border-radius:6px;font-size:11px;text-transform:none;letter-spacing:normal;font-weight:400;">
+                    <option value="" data-tr="— Select a reason —">— Select a reason —</option>
+                    <option value="Make friends / build relationships">Make friends / build relationships</option>
+                    <option value="Improve or maintain relationships (family, friends, customers, citizens)">Improve or maintain relationships</option>
+                    <option value="Image / reputation">Image / reputation</option>
+                    <option value="Learn or work more efficiently">Learn or work more efficiently</option>
+                    <option value="Solve problems or make decisions efficiently">Solve problems or make decisions efficiently</option>
+                    <option value="Better physical and mental health">Better physical and mental health</option>
+                    <option value="Feel less stressed or feel more energized">Feel less stressed or feel more energized</option>
+                    <option value="__auto__" data-tr="Choose a reason for me">Choose a reason for me</option>
+                    <option value="__own__" data-tr="I'll use my own idea">I'll use my own idea</option>
+                  </select>
+                  <input type="text" id="oq-idea-own-input" class="idea-own-input hidden"
+                    placeholder="Type your reason…" data-tr-placeholder="Type your reason…"
+                    autocomplete="off" spellcheck="false">
+                </div>
+                <div id="oq-idea-status" style="font-size:10.5px;color:#888;margin-top:4px;text-transform:none;letter-spacing:normal;font-weight:400;min-height:13px;"></div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="stage0-block-label" data-tr="Statement &amp; Reason">Statement &amp; Reason</td>
+              <td id="ownq-ref-1" class="stage0-structure"></td>
+              <td id="ownq-spine-1" class="stage0-spine"></td>
+            </tr>
+            <tr>
+              <td class="stage0-block-label" data-tr="Before Example">Before Example</td>
+              <td id="ownq-ref-2" class="stage0-structure"></td>
+              <td id="ownq-spine-2" class="stage0-spine"></td>
+            </tr>
+            <tr>
+              <td class="stage0-block-label" data-tr="After Example">After Example</td>
+              <td id="ownq-ref-3" class="stage0-structure"></td>
+              <td id="ownq-spine-3" class="stage0-spine"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div id="ownq-record-area" style="margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <button id="btn-ownq-record" class="btn-record pulse">
+            <div class="record-dot"></div>
+          </button>
+          <div id="ownq-record-status" style="font-size:12px;color:#c0392b;min-height:16px;text-align:center;"></div>
+          <div id="ownq-timer-box" class="hidden">
+            <div id="ownq-timer-label">RECORDING TIME</div>
+            <div id="ownq-timer-value">
+              <span id="ownq-timer-digits">00:00</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="ownq-results-area" class="hidden" style="margin-top:16px;border-top:1px solid #eee;padding-top:14px;">
+          <div class="result-transcript-label" id="ownq-transcript-label">Transcript</div>
+          <div id="ownq-transcript-text" class="result-transcript-text" style="margin-bottom:8px;"></div>
+          <audio id="ownq-playback" controls class="question-audio-player" style="margin-bottom:10px;"></audio>
+          <div id="ownq-analysis-block" class="result-analysis-block hidden"></div>
+          <button id="btn-ownq-grammar" type="button" class="btn-secondary hidden"
+            style="width:auto;padding:6px 14px;font-size:12px;margin-top:10px;"
+            data-tr="Optional grammar check">Optional grammar check</button>
+          <div id="ownq-grammar-block" class="result-analysis-block hidden"></div>
+
+          <div id="ownq-post-record" class="hidden" style="margin-top:14px;padding-top:12px;border-top:1px solid #eee;display:flex;flex-direction:column;gap:8px;align-items:center;">
+            <div id="ownq-save-status" style="font-size:12px;min-height:16px;text-align:center;color:#00736b;"></div>
+            <button id="btn-ownq-record-again" class="btn-record-again" style="width:auto;padding:8px 18px;font-size:13px;">Record Again</button>
+          </div>
         </div>
 
       </div>
@@ -581,6 +727,23 @@
   </div>
 </div>
 
+<!-- Own-question mode: unsaved-work confirmation. Uses the existing modal CSS so
+     the copy can carry data-tr and translate, which a native confirm() cannot. -->
+<div id="ownq-confirm-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2 id="ownq-confirm-title"></h2>
+    <hr>
+    <p id="ownq-confirm-text"></p>
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+      <button id="ownq-confirm-cancel" type="button"
+        style="background:none;border:1px solid #ccc;color:#555;border-radius:7px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;"
+        data-tr="Go back">Go back</button>
+      <button id="ownq-confirm-ok" type="button"
+        style="background:#c0392b;border:none;color:#fff;border-radius:7px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;">Continue</button>
+    </div>
+  </div>
+</div>
+
 <!-- Saving modal -->
 <div id="saving-modal" class="modal-overlay hidden">
   <div class="modal-box">
@@ -649,8 +812,28 @@
     return !!(s && s.classList.contains("active"));
   }
 
+  function inOwnQ() {
+    var s = document.getElementById("screen-ownq");
+    return !!(s && s.classList.contains("active"));
+  }
+
   function liveQuestion() {
     try {
+      // Own-question mode: the question is whatever the student typed. There is
+      // no set metadata, so the idea generator gets the neutral free/open pair -
+      // matching the single free-ending reference skeleton shown on screen.
+      if (inOwnQ()) {
+        var el = document.getElementById("ownq-question-input");
+        var typed = el ? (el.value || "").trim() : "";
+        if (!typed) return null;
+        return {
+          question_id:       "ownq",
+          q:                 typed,
+          question_type:     "free",
+          opening_type:      "open",
+          highlight_phrases: []
+        };
+      }
       if (inStage0()) {
         var s0 = (typeof STAGE0_CURRENT !== "undefined") ? STAGE0_CURRENT : null;
         if (!s0) return null;
@@ -782,7 +965,23 @@
       if (reason === "__auto__") reason = "AUTO";
 
       var question = currentQuestionText();
-      if (!question) { if (status) status.textContent = "Open a question first, then try again."; return; }
+      if (!question) {
+        // Own-question mode has nothing to "open" - the student just hasn't typed
+        // the question yet, so say that instead, and translate it.
+        if (inOwnQ()) {
+          var oqMsg = "Type your question first.";
+          if (status) {
+            status.setAttribute("data-tr", oqMsg);
+            if (typeof translateUI === "function") translateUI(oqMsg, status, false);
+            else status.textContent = oqMsg;
+          }
+          var oqEl = document.getElementById("ownq-question-input");
+          if (oqEl) oqEl.focus();
+          return;
+        }
+        if (status) status.textContent = "Open a question first, then try again.";
+        return;
+      }
       var meta = currentQuestionMeta();
 
       // Cache hit — no API call. Typed reasons always regenerate, because the
@@ -842,9 +1041,29 @@
     output: null
   });
 
+  // Own-question mode - renders into its own Idea column, same as Stage 0.
+  bindIdeaPanel({
+    button: "oq-btn-idea-fill",
+    select: "oq-idea-reason-select",
+    status: "oq-idea-status",
+    blockPrefix: "ownq-spine-",
+    ownInput: "oq-idea-own-input",
+    output: null
+  });
+
   // Translate the Stage 0 panel's static labels too.
   try { if (typeof translateStaticEls === "function") translateStaticEls("#stage0-table-area"); } catch (e) {}
 })();
+
+// Collapsible "How to use this page" for own-question mode (same pattern as Stage 0).
+window.toggleOwnQInstructions = function () {
+  var body = document.getElementById("ownq-instr-body");
+  var chev = document.getElementById("ownq-instr-chevron");
+  if (!body) return;
+  var open = (body.style.display !== "none");
+  body.style.display = open ? "none" : "";
+  if (chev) chev.style.transform = open ? "rotate(-90deg)" : "";
+};
 </script>
 <script src="script.js"></script>
 </body>

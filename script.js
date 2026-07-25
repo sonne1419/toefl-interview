@@ -43,7 +43,13 @@ const STAGE_META = {
 
   5: { title: "Exam Mode",           instruction: "Exam mode — no cues.",
        blurb: "A full test with no cues and no feedback until the end — the closest thing to the real exam.",
-       intro: "" }
+       intro: "" },
+
+  // Title only. The mode's on-screen copy (intro, blurb, labels) lives in
+  // index.html with data-tr and is translated by the [data-tr] sweep, so keeping
+  // a second copy here would just let the two drift apart. This entry exists so
+  // the results cards can resolve STAGE_META[r.stage].title.
+  ownq: { title: "Your Own Question" }
 };
 
 // Stage 0 is not in STAGE_META (it runs its own screen), but the selector still
@@ -819,6 +825,13 @@ async function warmUpTranslations() {
    "Pick a reason and generate ideas", "Generate",
    "The sample answers a different question:", "It answers:",
    "Try this question again",
+   "Your Own Question", "Bring your own question →", "Your question",
+   "Reference structure", "Type or paste your question here…",
+   "Type your question first.", "Help me with ideas",
+   "Type a new question", "saved this session", "Saved to your records",
+   "The current question will be cleared.", "Clear and continue",
+   "Nothing recorded yet", "You have not recorded an answer. Exit anyway?",
+   "Exit", "Go back",
    "Re-record your answer and compare it with the 5-point sample again. You have 45 seconds."
   ].forEach(t => set.add(t));
   if (STAGE_META[4] && STAGE_META[4].instruction) {
@@ -1777,6 +1790,8 @@ $("btn-start-session").onclick = async () => {
     } else {
       showScreen("screen-mic-instruction");
     }
+  } else if (STATE.selectedStage === "ownq") {
+    startOwnQ();
   } else if (STATE.selectedStage === 0) {
     startStage0();
   } else {
@@ -1820,7 +1835,9 @@ async function runMicWarmup() {
   STATE.micWarmedUp = true;
   $("warmup-status").textContent = "✓ Microphone ready. Starting practice...";
   await sleep(700);
-  if (STATE.selectedStage === 0) {
+  if (STATE.selectedStage === "ownq") {
+    startOwnQ();
+  } else if (STATE.selectedStage === 0) {
     startStage0();
   } else {
     startPractice();
@@ -2278,6 +2295,12 @@ function renderPracticeSupport(task, question, stage) {
   supportCard.style.display = "";
   var ideaWrapEl = $("idea-frame-wrap");
   if (ideaWrapEl) ideaWrapEl.style.display = "";
+  // Translate the idea-frame heading + explanation lines with the CURRENT
+  // language each time a question loads. The page-load sweep in index.html
+  // runs before the student has picked a language, and the reopen sweep only
+  // fires on manual toggle - so without this the labels stay English. The
+  // reason <option>s have no data-tr, so they are left in English by design.
+  try { translateStaticEls("#idea-frame-wrap"); } catch (e) {}
   const stageNum = parseInt(stage) || 1;
   const meta = STAGE_META[stageNum] || STAGE_META[1];
   $("practice-stage-title").textContent       = (stageNum === 4) ? "Reference Structure" : meta.title;
@@ -3164,8 +3187,13 @@ $("btn-new-session").onclick = () => {
   STATE.currentQuestion = null;
   $("test-selector").value        = "";
   $("stage-selector").value       = "";
-  $("btn-start-session").disabled = true;
+  // Setting .value in code does NOT fire the selector's onchange, so the
+  // Start button and the stage blurb would keep their previous-session state:
+  // a stale blurb under an empty dropdown, with Start stuck grey. Reset both
+  // explicitly so the start screen is internally consistent.
   $("start-status").textContent   = "";
+  checkStartReady();
+  showStageBlurb();
   $("mic-understand-check").checked = false;
   $("btn-mic-continue").disabled    = true;
   $("btn-enable-mic").disabled      = false;
@@ -4340,6 +4368,612 @@ async function endStage0Session() {
   await exportStage0Doc(recs);
   statusEl.textContent = "✓ Saved to your records.";
 }
+
+// ═══════════════════════════════════════════════════
+// YOUR OWN QUESTION MODE
+// The student supplies the question; there is no set, no sample and no gap
+// comparison. One fixed reference skeleton plus the idea panel, then the same
+// record -> transcribe -> score -> grammar chain the other stages use.
+// ═══════════════════════════════════════════════════
+
+// Free-ending skeleton, one line per block. Deliberately ENGLISH ONLY and not
+// registered for translation: it is scaffolding to copy into speech, not prose
+// to understand, and the blanks carry the meaning.
+const OWNQ_REF_BLOCKS = [
+  "Statement: I would say ____ .\nReason: because it can ____.",
+  "For example: before \u2192 [x statement] \u2192 [x reason]",
+  "However, After\u2192 [statement] \u2192 [reason]"
+];
+
+const OWNQ_TIME = 45;
+
+let OWNQ_BLOB       = null;
+let OWNQ_TRANSCRIPT = "";
+let OWNQ_TIMER      = null;
+let OWNQ_STOPPING   = false;
+// The current attempt lives here, NOT in STATE.recordings, until the student
+// presses Save. Re-recording therefore rewrites it, and nothing reaches the
+// session record or Drive unless it was explicitly saved.
+let OWNQ_PENDING    = null;
+
+function ownqQuestionText() {
+  const el = $("ownq-question-input");
+  return el ? (el.value || "").trim() : "";
+}
+
+// Warning line under the record button. Empty string clears it.
+function ownqWarn(msg) {
+  const el = $("ownq-record-status");
+  if (!el) return;
+  if (!msg) { el.textContent = ""; el.removeAttribute("data-tr"); return; }
+  el.setAttribute("data-tr", msg);
+  translateUI(msg, el, false);
+}
+
+function ownqSavedEntries() {
+  return STATE.recordings.filter(r => r.stage === "ownq");
+}
+
+function ownqUpdateSavedCount() {
+  const wrap  = $("ownq-saved-count");
+  const numEl = $("ownq-saved-n");
+  if (!wrap || !numEl) return;
+  const n = ownqSavedEntries().length;
+  wrap.classList.toggle("hidden", n === 0);
+  numEl.textContent = n ? String(n) : "";
+}
+
+// Answers are kept automatically - there is no Save button. The entry is
+// committed as soon as there is a transcript, so a scoring failure still keeps
+// the recording, and every later update (band, feedback, grammar) mutates the
+// same object that is already in STATE.recordings.
+// Committing again for the same question REWRITES the earlier answer rather than
+// stacking duplicates, which is what re-recording should do.
+function ownqCommit(entry) {
+  if (!entry) return;
+  const q = (entry.q || "").trim();
+  const idx = STATE.recordings.findIndex(
+    r => r.stage === "ownq" && (r.q || "").trim() === q
+  );
+  const slot = (idx >= 0) ? idx : ownqSavedEntries().length;
+
+  entry.question_index = slot + 1;
+  if (!entry.filename) {
+    entry.filename = getRunLabel("ownq", "ownq", "q" + (slot + 1)) + ".webm";
+  }
+
+  if (idx >= 0) {
+    // Same object already in place: nothing to move. Different object (a fresh
+    // take of the same question) replaces the old entry.
+    if (STATE.recordings[idx] !== entry) STATE.recordings[idx] = entry;
+  } else {
+    STATE.recordings.push(entry);
+  }
+  ownqSavedNotice();
+  ownqUpdateSavedCount();
+}
+
+function ownqSavedNotice() {
+  const st = $("ownq-save-status");
+  if (!st) return;
+  st.setAttribute("data-tr", "Saved to your records");
+  translateUI("Saved to your records", st, false);
+}
+
+// Promise-based confirm on the in-page modal. A native confirm() cannot be
+// translated, and every other string in this mode is.
+function ownqConfirm(titleEn, textEn, okEn) {
+  return new Promise(resolve => {
+    const modal = $("ownq-confirm-modal");
+    if (!modal) { resolve(true); return; }
+    const t  = $("ownq-confirm-title");
+    const x  = $("ownq-confirm-text");
+    const ok = $("ownq-confirm-ok");
+    const cancel = $("ownq-confirm-cancel");
+
+    if (t)  { t.setAttribute("data-tr", titleEn);  translateUI(titleEn, t, false); }
+    if (x)  { x.setAttribute("data-tr", textEn);   translateUI(textEn,  x, false); }
+    if (ok) { ok.setAttribute("data-tr", okEn);    translateUI(okEn,   ok, false); }
+
+    const close = (val) => {
+      modal.classList.add("hidden");
+      if (ok)     ok.onclick = null;
+      if (cancel) cancel.onclick = null;
+      resolve(val);
+    };
+    if (ok)     ok.onclick     = () => close(true);
+    if (cancel) cancel.onclick = () => close(false);
+    modal.classList.remove("hidden");
+  });
+}
+
+// Switching questions clears the current one, so it confirms first - the same
+// deliberate break the old dropdown gave when a student picked another question.
+async function ownqNewQuestion() {
+  const go = await ownqConfirm(
+    "Type a new question",
+    "The current question will be cleared.",
+    "Clear and continue"
+  );
+  if (!go) return;
+
+  OWNQ_PENDING    = null;
+  OWNQ_BLOB       = null;
+  OWNQ_TRANSCRIPT = "";
+
+  const qEl = $("ownq-question-input");
+  if (qEl) { qEl.value = ""; qEl.focus(); }
+
+  $("ownq-results-area").classList.add("hidden");
+  $("ownq-analysis-block").classList.add("hidden");
+  $("ownq-grammar-block").classList.add("hidden");
+  $("btn-ownq-grammar").classList.add("hidden");
+  $("ownq-post-record").classList.add("hidden");
+  const st = $("ownq-save-status");
+  if (st) { st.textContent = ""; st.removeAttribute("data-tr"); }
+
+  for (let i = 1; i <= 3; i++) {
+    const sp = $("ownq-spine-" + i);
+    if (sp) sp.innerHTML = "";
+  }
+  const sel = $("oq-idea-reason-select"); if (sel) sel.value = "";
+  const own = $("oq-idea-own-input");     if (own) { own.value = ""; own.classList.add("hidden"); }
+  const ist = $("oq-idea-status");        if (ist) ist.textContent = "";
+
+  ownqWarn("");
+  const btn = $("btn-ownq-record");
+  btn.classList.remove("recording", "hidden");
+  btn.classList.add("pulse");
+  ownqBindRecordButton();
+  ownqUpdateSavedCount();
+}
+
+function ownqRenderReference() {
+  for (let i = 0; i < 3; i++) {
+    const cell = $("ownq-ref-" + (i + 1));
+    if (!cell) continue;
+    cell.innerHTML = OWNQ_REF_BLOCKS[i]
+      .split("\n")
+      .map(line => escapeHTML(line))
+      .join("<br>");
+  }
+}
+
+async function startOwnQ() {
+  showScreen("screen-ownq");
+  translateStaticEls("#screen-ownq");
+  ownqRenderReference();
+
+  OWNQ_BLOB       = null;
+  OWNQ_TRANSCRIPT = "";
+  ownqWarn("");
+
+  // Fresh session = fresh question. Re-recording the same question is handled by
+  // Record Again, which leaves the text in place.
+  const qEl = $("ownq-question-input");
+  if (qEl) qEl.value = "";
+
+  OWNQ_PENDING = null;
+  const st0 = $("ownq-save-status");
+  if (st0) { st0.textContent = ""; st0.removeAttribute("data-tr"); }
+  ownqUpdateSavedCount();
+
+  $("ownq-results-area").classList.add("hidden");
+  $("ownq-analysis-block").classList.add("hidden");
+  $("ownq-grammar-block").classList.add("hidden");
+  $("btn-ownq-grammar").classList.add("hidden");
+  $("ownq-post-record").classList.add("hidden");
+
+  // Clear any spine from a previous session so it can't sit under a new question.
+  for (let i = 1; i <= 3; i++) {
+    const sp = $("ownq-spine-" + i);
+    if (sp) sp.innerHTML = "";
+  }
+
+  const btn = $("btn-ownq-record");
+  btn.classList.remove("recording", "hidden");
+  btn.classList.add("pulse");
+  ownqBindRecordButton();
+}
+
+function ownqBindRecordButton() {
+  const btn = $("btn-ownq-record");
+  if (!btn) return;
+
+  // Kill any interval left from a previous binding, or its tick keeps firing
+  // against the new state (same guard Stage 0 needs).
+  if (OWNQ_TIMER) { clearInterval(OWNQ_TIMER); OWNQ_TIMER = null; }
+  OWNQ_STOPPING = false;
+
+  const autoStop = async () => {
+    if (OWNQ_STOPPING) return;
+    OWNQ_STOPPING = true;
+    if (OWNQ_TIMER) { clearInterval(OWNQ_TIMER); OWNQ_TIMER = null; }
+    $("ownq-timer-box").classList.add("hidden");
+    btn.classList.remove("recording");
+    btn.classList.add("hidden");
+    OWNQ_BLOB = await stopRecording();
+    $("ownq-post-record").classList.remove("hidden");
+    await ownqProcessRecording();
+  };
+
+  btn.onclick = async () => {
+    if (btn.classList.contains("pulse")) {
+      // The button stays clickable with an empty question and warns on use.
+      // Disabled-until-valid controls depend on an event firing to re-enable,
+      // which is exactly how the Start button ended up stuck grey.
+      if (!ownqQuestionText()) {
+        ownqWarn("Type your question first.");
+        const q = $("ownq-question-input");
+        if (q) q.focus();
+        return;
+      }
+      ownqWarn("");
+
+      const ok = await ensureMic();
+      if (!ok) return;
+
+      btn.classList.remove("pulse");
+      btn.classList.add("recording");
+      OWNQ_STOPPING = false;
+      startRecording();
+
+      let remaining = OWNQ_TIME;
+      $("ownq-timer-digits").textContent = "00:45";
+      $("ownq-timer-value").classList.remove("danger");
+      $("ownq-timer-box").classList.remove("hidden");
+      OWNQ_TIMER = setInterval(async () => {
+        remaining--;
+        const m = Math.floor(remaining / 60).toString().padStart(2, "0");
+        const sec = (remaining % 60).toString().padStart(2, "0");
+        $("ownq-timer-digits").textContent = m + ":" + sec;
+        $("ownq-timer-value").classList.toggle("danger", remaining <= 5);
+        if (remaining <= 0) await autoStop();
+      }, 1000);
+
+    } else if (btn.classList.contains("recording")) {
+      await autoStop();
+    }
+  };
+}
+
+async function ownqProcessRecording() {
+  if (!OWNQ_BLOB) return;
+
+  const player = $("ownq-playback");
+  if (player.dataset.blobUrl) { try { URL.revokeObjectURL(player.dataset.blobUrl); } catch (e) {} }
+  const url = URL.createObjectURL(OWNQ_BLOB);
+  player.dataset.blobUrl = url;
+  player.src = url;
+
+  $("ownq-results-area").classList.remove("hidden");
+  $("ownq-transcript-text").textContent  = "Transcribing...";
+  $("ownq-transcript-label").textContent = "Transcript";
+  $("ownq-analysis-block").classList.add("hidden");
+  $("ownq-grammar-block").classList.add("hidden");
+  $("btn-ownq-grammar").classList.add("hidden");
+
+  const question = ownqQuestionText();
+
+  // Created up front so the recording is saveable even if transcription fails -
+  // otherwise a Whisper error would strand the audio with no way to keep it.
+  // filename is assigned at save time (it depends on how many are saved).
+  OWNQ_PENDING = {
+    stage: "ownq",
+    question_id: "ownq",
+    q: question,
+    audio: "",
+    blob: OWNQ_BLOB,
+    filename: "",
+    set_label: "Your Own Question",
+    test_id: "ownq",
+    question_index: 1,
+    transcript: "",
+    band: null,
+    feedback: "",
+    gap: "",
+    grammar: ""
+  };
+  const entry = OWNQ_PENDING;
+
+  // ── 1. Transcribe ────────────────────────────────
+  try {
+    const audio_base64 = await blobToBase64(OWNQ_BLOB);
+    const res = await fetch("/.netlify/functions/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audio_base64, filename: "ownq.webm" })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Transcription failed");
+    OWNQ_TRANSCRIPT = normalizeTranscript(data.transcript || "");
+  } catch (e) {
+    console.error("Own-question transcription failed:", e.message);
+    $("ownq-transcript-text").textContent = "(transcription failed)";
+    return;
+  }
+
+  const words = countWords(OWNQ_TRANSCRIPT);
+  $("ownq-transcript-text").textContent  = OWNQ_TRANSCRIPT || "(no speech detected)";
+  $("ownq-transcript-label").textContent = "Transcript — " + words + " words";
+
+  entry.transcript = OWNQ_TRANSCRIPT;
+  // Kept from here on: a later scoring failure must not lose the recording.
+  ownqCommit(entry);
+
+  if (!OWNQ_TRANSCRIPT.trim()) return;
+
+  // ── 2. Band + full feedback ──────────────────────
+  // No band_only here: that flag exists because Stage 0's gap analysis carries
+  // the written feedback. This mode has no gap analysis, so analyze.js's own
+  // three-criterion output IS the feedback.
+  const block = $("ownq-analysis-block");
+  block.innerHTML = '<div class="analysis-feedback">Scoring…</div>';
+  block.classList.remove("hidden");
+
+  try {
+    const res = await fetch("/.netlify/functions/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        questions: [{ question: question, transcript: OWNQ_TRANSCRIPT }],
+        language: analysisLang()
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Analysis failed");
+
+    const result = (data.parsed || {}).Q1;
+    if (!result) {
+      console.error("Own-question mode: could not parse a result. Raw:", data.raw);
+      throw new Error("No result returned for this response");
+    }
+
+    entry.band     = result.band;
+    entry.feedback = result.feedback || "";
+    ownqCommit(entry);
+
+    const bandHtml = (result.band !== null)
+      ? '<div class="analysis-band">Band ' + result.band + ' · ' + words + ' words</div>'
+      : '<div class="analysis-error">Could not score this response.</div>';
+
+    const fbHtml = entry.feedback
+      ? '<div class="analysis-feedback" style="margin-top:6px;">' +
+          entry.feedback.split("\n").filter(l => l.trim())
+            .map(l => '<div class="analysis-feedback-line">' + escapeHTML(l) + '</div>')
+            .join("") +
+        '</div>'
+      : "";
+
+    block.innerHTML = bandHtml + fbHtml;
+
+    const gBtn = $("btn-ownq-grammar");
+    if (gBtn) {
+      gBtn.classList.remove("hidden");
+      gBtn.disabled = false;
+      gBtn.onclick = () => runOptionalGrammar({
+        button: "btn-ownq-grammar",
+        block:  "ownq-grammar-block",
+        getQuestion:   () => entry.q,
+        getTranscript: () => OWNQ_TRANSCRIPT,
+        store: (g) => { entry.grammar = g; ownqCommit(entry); }
+      });
+    }
+  } catch (e) {
+    console.error("Own-question analysis failed:", e.message);
+    block.innerHTML = '<div class="analysis-error">Scoring failed. Please try again.</div>';
+  }
+}
+
+// Record Again — replaces the attempt, keeps the typed question in place.
+function ownqBindRecordAgain() {
+  const again = $("btn-ownq-record-again");
+  if (!again) return;
+  again.onclick = () => {
+    OWNQ_BLOB = null;
+    OWNQ_TRANSCRIPT = "";
+    // A fresh take replaces this question's stored answer once it is scored.
+    OWNQ_PENDING = null;
+    const st = $("ownq-save-status");
+    if (st) { st.textContent = ""; st.removeAttribute("data-tr"); }
+    $("ownq-post-record").classList.add("hidden");
+    $("ownq-results-area").classList.add("hidden");
+    $("ownq-analysis-block").classList.add("hidden");
+    $("ownq-grammar-block").classList.add("hidden");
+    $("btn-ownq-grammar").classList.add("hidden");
+    ownqWarn("");
+
+    const btn = $("btn-ownq-record");
+    btn.classList.remove("recording", "hidden");
+    btn.classList.add("pulse");
+    ownqBindRecordButton();
+  };
+}
+
+// Clear the warning as soon as the student starts typing.
+function ownqBindQuestionInput() {
+  const el = $("ownq-question-input");
+  if (!el) return;
+  el.addEventListener("input", () => {
+    if (el.value.trim()) ownqWarn("");
+  });
+}
+
+async function endOwnQSession() {
+  stopAllAudio();
+  releaseMic();
+  clearInterval(STATE.timerInterval);
+  if (OWNQ_TIMER) { clearInterval(OWNQ_TIMER); OWNQ_TIMER = null; }
+  $("saving-modal").classList.add("hidden");
+  showScreen("screen-end");
+
+  const recs = STATE.recordings.filter(r => r.stage === "ownq");
+  const banded = recs.filter(r => typeof r.band === "number");
+  const avg = banded.length
+    ? (banded.reduce((sum, r) => sum + r.band, 0) / banded.length).toFixed(1)
+    : "—";
+
+  const heading = document.querySelector("#screen-end .results-top-bar h2");
+  if (heading) heading.textContent = "Your Own Question — Practice Summary";
+
+  const statusEl = $("transcription-status");
+  statusEl.classList.remove("hidden");
+  statusEl.textContent = "Saving to your records…";
+
+  $("end-summary").textContent =
+    recs.length + " answer" + (recs.length !== 1 ? "s" : "") + " saved" +
+    " · Average band: " + avg;
+
+  const list = $("results-list");
+  list.innerHTML = "";
+  recs.forEach(r => list.appendChild(ownqResultCard(r)));
+  try { translateStaticEls("#results-list"); } catch (e) {}
+
+  const transcripts = {};
+  recs.forEach((r, i) => { transcripts[i] = r.transcript || ""; });
+  await autoDownload(transcripts);
+  await exportOwnQDoc(recs);
+  statusEl.textContent = "✓ Saved to your records.";
+}
+
+function ownqResultCard(r) {
+  const card = document.createElement("div");
+  card.className = "result-item";
+
+  const words = countWords(r.transcript || "");
+
+  const lines = (t) => (t || "")
+    .split("\n").filter(l => l.trim())
+    .map(l => '<div class="analysis-feedback-line">' + escapeHTML(l) + '</div>')
+    .join("");
+
+  const bandHtml = (typeof r.band === "number")
+    ? '<div class="analysis-band">Band ' + r.band + ' · ' + words + ' words</div>'
+    : '<div class="analysis-feedback-line" data-tr="Not scored — try recording this one again.">' +
+      'Not scored — try recording this one again.</div>';
+
+  const fbHtml = lines(r.feedback);
+  const grHtml = lines(r.grammar);
+
+  card.innerHTML =
+    '<div class="result-num" data-tr="Your Own Question">Your Own Question</div>' +
+    '<p class="result-q">' + escapeHTML(r.q || "") + '</p>' +
+    (r.blob
+      ? '<div class="result-audio-block">' +
+          '<div class="result-audio-label" data-tr="Your Recording">Your Recording</div>' +
+          '<audio controls src="' + URL.createObjectURL(r.blob) + '"></audio>' +
+        '</div>'
+      : "") +
+    '<div class="result-transcript-label">' +
+      '<span data-tr="Your answer">Your answer</span> — ' + words + ' words</div>' +
+    '<div class="result-transcript-text">' +
+      escapeHTML(r.transcript || "(no speech detected)") + '</div>' +
+    bandHtml +
+    (fbHtml ? '<div class="analysis-feedback" style="margin-top:6px;">' + fbHtml + '</div>' : "") +
+    (grHtml
+      ? '<div class="result-transcript-label" style="margin-top:10px;" data-tr="Grammar Check">Grammar Check</div>' +
+        '<div class="analysis-feedback">' + grHtml + '</div>'
+      : "");
+
+  return card;
+}
+
+async function exportOwnQDoc(recs) {
+  if (!recs || !recs.length) return;
+  if (!recs.some(r => (r.transcript && r.transcript.trim()) || r.blob)) return;
+  const studentKey = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
+
+  const banded = recs.filter(r => typeof r.band === "number");
+  const avg = banded.length
+    ? (banded.reduce((sum, r) => sum + r.band, 0) / banded.length).toFixed(1)
+    : "N/A";
+
+  const nl2br = (t) => (t || "").split("\n").filter(l => l.trim()).map(escapeHTML).join("<br>");
+
+  const rowsHtml = recs.map(r => {
+    const words   = countWords(r.transcript || "");
+    const yourUrl = r.driveLink || "";
+    const yourLink = yourUrl
+      ? '<a href="' + escapeHTML(yourUrl) + '">▶ Play your recording</a>'
+      : '<span style="color:#999">Your recording unavailable</span>';
+    const bandLine = (typeof r.band === "number")
+      ? "<p><strong>Band " + r.band + " &middot; " + words + " words</strong></p>"
+      : "<p><strong>(not scored)</strong></p>";
+    return '<h2 style="color:#00736b;font-size:16px">Your Own Question</h2>' +
+      "<p><strong>Question:</strong> " + escapeHTML(r.q || "") + "</p>" +
+      "<p>" + yourLink + "</p>" +
+      bandLine +
+      "<p><strong>Your answer:</strong><br>" + nl2br(r.transcript) + "</p>" +
+      (r.feedback ? "<p><strong>Feedback:</strong><br>" + nl2br(r.feedback) + "</p>" : "") +
+      (r.grammar  ? "<p><strong>Grammar:</strong><br>"  + nl2br(r.grammar)  + "</p>" : "");
+  }).join("<hr>");
+
+  const html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head>' +
+    '<body style="font-family:Arial,sans-serif">' +
+    "<h1>Your Own Question — Practice Summary</h1>" +
+    "<p>Generated " + escapeHTML(new Date().toLocaleString()) + "</p>" +
+    "<p>Average band: " + avg + "</p>" +
+    rowsHtml +
+    "</body></html>";
+
+  const docName = sessionBaseName() + "_own_question_report";
+  try {
+    const up = await uploadToDrive(
+      docName, html, "text/html", studentKey,
+      false,
+      "application/vnd.google-apps.document",
+      "04_speaking_interview",
+      STATE._sessionFileId || null
+    );
+    if (up && up.fileId) STATE._sessionFileId = up.fileId;
+  } catch (e) {
+    console.warn("Own-question report upload failed:", e.message);
+  }
+}
+
+// ── Entry + End Session wiring ──
+$("btn-start-ownq").onclick = async () => {
+  STATE.selectedStage = "ownq";
+  STATE.currentTask   = null;
+  STATE._endCalled    = false;
+  if (!STATE.micWarmedUp) STATE.recordings = [];
+  $("start-status").textContent = "";
+
+  if (!STATE.micWarmedUp) {
+    const perm = await micPermissionState();
+    if (perm === "granted") {
+      showScreen("screen-warmup");
+      runMicWarmup();
+    } else {
+      showScreen("screen-mic-instruction");
+    }
+  } else {
+    startOwnQ();
+  }
+};
+
+$("btn-end-ownq").onclick = async () => {
+  if (STATE._endCalled) return;
+
+  // Answers are kept automatically, so there is never unsaved work to warn about.
+  // The only case worth stopping for is leaving with nothing recorded at all.
+  if (!ownqSavedEntries().length) {
+    const go = await ownqConfirm(
+      "Nothing recorded yet",
+      "You have not recorded an answer. Exit anyway?",
+      "Exit"
+    );
+    if (!go) return;
+  }
+
+  STATE._endCalled = true;
+  endOwnQSession();
+};
+
+$("btn-ownq-new-question").onclick = ownqNewQuestion;
+
+ownqBindRecordAgain();
+ownqBindQuestionInput();
 
 // ═══════════════════════════════════════════════════
 // INIT
