@@ -784,7 +784,7 @@
 
   // ── Local cache so the same question+reason never re-hits the API ──
   // Bump this whenever the idea prompt/format changes so old cached answers are dropped.
-  var IDEA_CACHE_VERSION = "v18";
+  var IDEA_CACHE_VERSION = "v19";
   var IDEA_CACHE_PREFIX  = "idea_spine_";              // shared prefix across all versions
   var IDEA_CACHE_NS      = IDEA_CACHE_PREFIX + IDEA_CACHE_VERSION + "::";
   var IDEA_CACHE_MEM = {}; // in-memory fallback if localStorage is unavailable
@@ -853,13 +853,17 @@
     var id = "";
     try {
       var q = liveQuestion();
-      if (q) id = q.question_id || "";
-      if (!id && q && q.q) {
-        // Fallback: cheap stable hash of the question text.
-        var s = q.q, hHash = 0, i;
+      // Always key by a hash of the QUESTION TEXT, so two different questions can
+      // never share a cache slot — question_id alone is unreliable because sets
+      // may leave it blank or repeat it, which made one question's idea show up
+      // for the next. question_id is appended only as an extra distinguisher.
+      var s = (q && q.q) ? q.q : "";
+      if (s) {
+        var hHash = 0, i;
         for (i = 0; i < s.length; i++) { hHash = ((hHash << 5) - hHash + s.charCodeAt(i)) | 0; }
         id = "h" + (hHash >>> 0);
       }
+      if (q && q.question_id) id += "_" + q.question_id;
     } catch (e) {}
     return IDEA_CACHE_NS + id + "::" + reason;
   }
