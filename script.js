@@ -2278,6 +2278,14 @@ function renderPracticeSupport(task, question, stage) {
   if (ideaOwn) { ideaOwn.value = ""; ideaOwn.classList.add("hidden"); }
   const ideaStatus = $("idea-status");
   if (ideaStatus) ideaStatus.textContent = "";
+  // Also hide + clear the generated idea frame. Ideas are cached per question,
+  // so leaving the old table on screen makes a previous question's idea look
+  // like it belongs to the new one.
+  const ideaOut = $("idea-frame-output");
+  if (ideaOut) ideaOut.style.display = "none";
+  const ib1 = $("idea-block-1"); if (ib1) ib1.textContent = "";
+  const ib2 = $("idea-block-2"); if (ib2) ib2.textContent = "";
+  const ib3 = $("idea-block-3"); if (ib3) ib3.textContent = "";
 
   // Question card — default hidden
   questionCard.classList.remove("hidden");
