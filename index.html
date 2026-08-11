@@ -988,10 +988,22 @@
       }
       var meta = currentQuestionMeta();
 
+      // Snapshot which question this request is FOR. If the student switches
+      // questions (dropdown / Q-tab) while the request is in flight, the live
+      // question — and the panel — will have changed by the time we get an
+      // answer back. Rendering then would drop one question's idea onto another
+      // (e.g. a "supportive teacher" spine appearing on an "after-school
+      // activities" question). We re-check this key before every render and
+      // drop the result silently if it no longer matches.
+      var reqKey = ideaCacheKey(reason);
+
       // Cache hit — no API call. Typed reasons always regenerate, because the
       // same wording can be taken in more than one direction.
       var cached = isOwn ? null : ideaCacheGet(reason);
       if (cached) {
+        // Synchronous, so no switch can have happened — but keep the guard so
+        // the two render paths stay identical if an await is ever added here.
+        if (ideaCacheKey(reason) !== reqKey) return;
         showFrame(parseSpineSections(cached), cfg.blockPrefix, cfg.output);
         if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
         return;
@@ -1015,11 +1027,21 @@
         if (!res.ok) throw new Error(d.error || "Failed");
         var parts = parseSpineSections(d.answer || "");
         if (!parts.statement && !parts.before && !parts.after) throw new Error("Empty");
+        // Cache the answer against the question it was generated for — this is
+        // correct regardless of what's on screen now, so it happens first.
         if (!isOwn) ideaCacheSet(reason, d.answer || "");
+        // Only paint the panel if we're STILL on the same question. If the
+        // student switched while this was in flight, the panel now belongs to a
+        // different question; writing here would show the wrong idea. Drop it
+        // silently — the answer is cached, so it appears instantly if they
+        // return and ask again.
+        if (ideaCacheKey(reason) !== reqKey) { fillBtn.disabled = false; return; }
         showFrame(parts, cfg.blockPrefix, cfg.output);
         if (status) status.textContent = (sel.value === "__auto__") ? "A reason was chosen for you." : "";
       } catch (e) {
-        if (status) status.textContent = "Could not get ideas. Please try again.";
+        // Don't overwrite the panel with an error if the student has already
+        // moved to another question — the failure was for a question they left.
+        if (status && ideaCacheKey(reason) === reqKey) status.textContent = "Could not get ideas. Please try again.";
       }
       fillBtn.disabled = false;
     });

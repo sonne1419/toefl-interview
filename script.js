@@ -3904,7 +3904,30 @@ async function exportStage0Doc(recs, suffix) {
       ? `<a href="${escapeHTML(yourUrl)}">▶ Play your recording</a>`
       : `<span style="color:#999">Your recording unavailable</span>`;
 
-    const header = `<h2 style="color:#00736b;font-size:16px">Stage 0 — ${escapeHTML(r.question_id || "")}</h2>`;
+    // This exporter is shared by true Stage 0 sessions AND by the Stage 4
+    // "Full Answer" interview flow (endStage4Session). Stage 0 items have no
+    // test grouping, but interview recordings carry set_id/set_name — and
+    // because question_id repeats across every set (q001..q004), a header of
+    // just the id makes different tests indistinguishable ("Stage 0 — q003"
+    // four times). So when the recording knows its test, lead with that.
+    const _headBits = [];
+    if (r.set_id || r.test_id) {
+      var _tid = r.set_id || r.test_id;
+      // "stage0" is the placeholder id real Stage 0 recordings carry; don't
+      // surface it as if it were a test name.
+      if (_tid && _tid !== "stage0") _headBits.push(escapeHTML(_tid));
+      if (r.set_name) _headBits.push(escapeHTML(r.set_name));
+    }
+    if (_headBits.length) {
+      // Interview-style header: {set_id} — {set_name} — Q{n} — {question_id}
+      _headBits.push("Q" + (r.question_index || ""));
+      if (r.question_id) _headBits.push(escapeHTML(r.question_id));
+    } else {
+      // True Stage 0: keep the original label.
+      _headBits.push("Stage 0");
+      if (r.question_id) _headBits.push(escapeHTML(r.question_id));
+    }
+    const header = `<h2 style="color:#00736b;font-size:16px">${_headBits.filter(Boolean).join(" — ")}</h2>`;
     const question = r.q ? `<p><strong>Question:</strong> ${escapeHTML(r.q)}</p>` : "";
     const links = `<p>${yourLink}</p>`;
 
@@ -3982,9 +4005,34 @@ async function exportStage0Doc(recs, suffix) {
     }
   } catch (e) {}
 
+  // Is this really an interview (Stage 4) session routed through here, or a true
+  // Stage 0 session? Interview recordings carry a real set_id (not "stage0").
+  const _isInterview = recs.some(r => (r.set_id && r.set_id !== "stage0") ||
+                                      (r.test_id && r.test_id !== "stage0"));
+  // List the distinct tests covered, so a session that spans several sets names
+  // them all at the top instead of hiding which tests were practiced.
+  let _testsLine = "";
+  if (_isInterview) {
+    const seen = [];
+    recs.forEach(r => {
+      const id = r.set_id || r.test_id || "";
+      if (!id || id === "stage0") return;
+      const label = r.set_name ? (id + " — " + r.set_name) : id;
+      if (seen.indexOf(label) === -1) seen.push(label);
+    });
+    if (seen.length) {
+      _testsLine = `<p><strong>${seen.length > 1 ? "Tests" : "Test"}:</strong> ` +
+                   seen.map(escapeHTML).join("; ") + `</p>`;
+    }
+  }
+  const _title = isRedo
+    ? (_isInterview ? "Full Answer — Redo" : "Stage 0 — Redo")
+    : (_isInterview ? "Full Answer — Practice Summary" : "Stage 0 — Practice Summary");
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
     <body style="font-family:Arial,sans-serif">
-      <h1>${isRedo ? "Stage 0 — Redo" : "Stage 0 — Practice Summary"}</h1>
+      <h1>${_title}</h1>
+      ${_testsLine}
       <p>Generated ${escapeHTML(new Date().toLocaleString())}</p>
       ${summary}${pillsHtml}${rowsHtml}
     </body></html>`;
