@@ -4726,6 +4726,7 @@ async function ownqProcessRecording() {
     question_index: 1,
     transcript: "",
     band: null,
+    reasoning: "",
     feedback: "",
     gap: "",
     grammar: ""
@@ -4759,10 +4760,11 @@ async function ownqProcessRecording() {
 
   if (!OWNQ_TRANSCRIPT.trim()) return;
 
-  // ── 2. Band + full feedback ──────────────────────
-  // No band_only here: that flag exists because Stage 0's gap analysis carries
-  // the written feedback. This mode has no gap analysis, so analyze.js's own
-  // three-criterion output IS the feedback.
+  // ── 2. Band (holistic, band-only) + gap comparison ──────────────
+  // Mirrors AD's Paste & Grade and the interview tool's own Stage 4/Exam:
+  // band_only decides the band holistically, then why-not-5-speaking explains
+  // the gap against a Band 5 sample (a DIFFERENT question — same_topic:false),
+  // with the band passed in so the explanation can't change it.
   const block = $("ownq-analysis-block");
   block.innerHTML = '<div class="analysis-feedback">Scoring…</div>';
   block.classList.remove("hidden");
@@ -4773,7 +4775,8 @@ async function ownqProcessRecording() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         questions: [{ question: question, transcript: OWNQ_TRANSCRIPT }],
-        language: analysisLang()
+        language: analysisLang(),
+        mode: "band_only"
       })
     });
     const data = await res.json();
@@ -4785,23 +4788,56 @@ async function ownqProcessRecording() {
       throw new Error("No result returned for this response");
     }
 
-    entry.band     = result.band;
-    entry.feedback = result.feedback || "";
+    entry.band      = result.band;
+    entry.reasoning = result.reasoning || "";
+    entry.feedback  = "";   // band_only carries no criteria text; gap fills this role
     ownqCommit(entry);
 
     const bandHtml = (result.band !== null)
-      ? '<div class="analysis-band">Band ' + result.band + ' · ' + words + ' words</div>'
+      ? '<div class="analysis-band">Band ' + result.band + ' · ' + words + ' words</div>' +
+        (entry.reasoning
+          ? '<div class="analysis-feedback" style="font-style:italic;color:#888;font-size:12px;margin-top:4px;">THINKING: ' + escapeHTML(entry.reasoning) + '</div>'
+          : '')
       : '<div class="analysis-error">Could not score this response.</div>';
 
-    const fbHtml = entry.feedback
-      ? '<div class="analysis-feedback" style="margin-top:6px;">' +
-          entry.feedback.split("\n").filter(l => l.trim())
-            .map(l => '<div class="analysis-feedback-line">' + escapeHTML(l) + '</div>')
-            .join("") +
-        '</div>'
-      : "";
+    block.innerHTML = bandHtml;
 
-    block.innerHTML = bandHtml + fbHtml;
+    // ── Gap comparison (below Band 5 only), same as Stage 4 ──
+    const sample = practiceBand5Sample();
+    if (typeof result.band === "number" && result.band < 5 && sample) {
+      const gapEl = document.createElement("div");
+      gapEl.className = "analysis-feedback";
+      gapEl.style.marginTop = "8px";
+      gapEl.innerHTML = "Comparing with a Band 5 answer…";
+      block.appendChild(gapEl);
+      try {
+        const gRes = await fetch("/.netlify/functions/why-not-5-speaking", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question, answer: OWNQ_TRANSCRIPT, sample, band: result.band,
+            language: analysisLang(),
+            same_topic: false,
+            sample_question: practiceBand5Question()
+          })
+        });
+        const gData = await gRes.json();
+        if (gRes.ok && gData.explanation) {
+          entry.gap = gData.explanation;
+          ownqCommit(entry);
+          gapEl.innerHTML =
+            '<div class="result-text-lbl" style="color:#8e44ad;font-weight:700;margin-bottom:4px;">How to reach Band 5</div>' +
+            '<div>' + gData.explanation.split("\n").filter(l => l.trim())
+              .map(l => '<div class="analysis-feedback-line">' + escapeHTML(l) + '</div>').join("") +
+            '</div>';
+        } else {
+          gapEl.remove();
+        }
+      } catch (ge) {
+        console.error("Own-question comparison failed:", ge.message);
+        gapEl.remove();
+      }
+    }
 
     const gBtn = $("btn-ownq-grammar");
     if (gBtn) {

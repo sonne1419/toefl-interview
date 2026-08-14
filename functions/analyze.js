@@ -30,7 +30,7 @@ ehmm... morning routine is good. I like exercise. it's healthy. it's good for yo
 // Band-only variant: Stage 0 sends mode="band_only" because the gap analysis
 // (why-not-5-speaking) carries all the written feedback there. Other stages
 // have no golden sample, so they keep the full three-criterion output.
-const INTERVIEW_SYSTEM_BAND_ONLY = `You are a TOEFL teacher scoring transcribed Speaking Interview responses.
+const INTERVIEW_SYSTEM_BAND_ONLY = `You are scoring transcribed Speaking Interview responses by comparing each one to the band samples provided.
 
 The transcript comes from speech recognition. It has no real capitalization or punctuation of its own — read it as if it were entirely lowercase and unpunctuated. Score only the words the student chose.
 
@@ -44,12 +44,14 @@ Bands:
 
 Any content genuinely tied to the question earns at least Band 1, however short or indirect. Grammar errors only lower the band when they obscure meaning.
 
-Output exactly two lines per question — the header line and the band line — and nothing else. No evaluation, no explanation, no advice. The "=== Q1 ===" header is required and must be kept exactly as shown, including for a single question:
+For each question, output exactly three lines — the header, a brief reasoning line, then the band line — and nothing else (no other evaluation or advice). The reasoning must come BEFORE the band. Keep the "=== Q1 ===" header and the "REASONING:" / "BAND:" labels exactly as shown, including for a single question:
 
 === Q1 ===
+REASONING: <one sentence on which band sample the response most resembles and why>
 BAND:X
 
 === Q2 ===
+REASONING: <one sentence>
 BAND:X`;
 
 const INTERVIEW_SYSTEM = `You are a TOEFL teacher scoring transcribed Speaking Interview responses.
@@ -192,8 +194,10 @@ exports.handler = async (event) => {
     for (const key of _keys) {
       try {
         const _system = (mode === "band_only") ? INTERVIEW_SYSTEM_BAND_ONLY : INTERVIEW_SYSTEM;
-        // band_only returns no prose, so there is nothing to translate.
-        analysis = await callOpenAI(key, (mode === "band_only") ? _system : withLanguage(_system, language), userContent);
+        // band_only now emits a brief REASONING line before each band, so it
+        // also needs the language instruction (its band/header markers are kept
+        // in English by that instruction's DO-NOT-TRANSLATE rule).
+        analysis = await callOpenAI(key, withLanguage(_system, language), userContent);
         lastErr = null;
         break;
       } catch (e) {
@@ -208,15 +212,15 @@ exports.handler = async (event) => {
     const parts = analysis.split(/={2,}\s*(Q\d+|OVERALL)\s*={2,}/);
     const parsed = {};
 
-    // Fallback: a terse reply (especially in band_only mode) may drop the
-    // "=== Q1 ===" header and return just "BAND:3". With no markers to split
-    // on, parsed would come back empty and the caller would see no result, so
-    // map any bare BAND lines onto Q1, Q2, ... in order.
+    // Fallback: a terse reply may drop the "=== Q1 ===" header and return just
+    // "REASONING: ...\nBAND:3". With no markers to split on, map bare BAND lines
+    // onto Q1, Q2, ... in order (taking the LAST band per response — see below).
     if (parts.length === 1) {
       const bares = analysis.match(/BAND:\s*\d/g) || [];
       bares.forEach((line, i) => {
         parsed["Q" + (i + 1)] = {
           band: parseInt(line.match(/\d/)[0]),
+          reasoning: "",
           feedback: ""
         };
       });
@@ -225,17 +229,24 @@ exports.handler = async (event) => {
       const key     = parts[i] ? parts[i].trim() : "";
       const block   = parts[i + 1] ? parts[i + 1].trim() : "";
       if (!key) continue;
-      // Band is at the END of the block
-      const bandM   = block.match(/BAND:\s*(\d)/);
-      // Remove BAND:X line from feedback display
+      // Take the LAST BAND match, not the first. The reasoning line can mention
+      // band-numbered samples ("resembles the Band 1 sample"), so a first-match
+      // parse risks grabbing that instead of the true final verdict.
+      const bandMatches = [...block.matchAll(/BAND:\s*(\d)/gi)];
+      const bandM = bandMatches.length ? bandMatches[bandMatches.length - 1] : null;
+      // Pull the REASONING line out for separate display (band_only mode).
+      const reasonM = block.match(/REASONING:\s*([\s\S]*?)(?:\n\s*BAND:|$)/i);
+      const reasoning = reasonM ? reasonM[1].trim() : "";
+      // Remove BAND:X and REASONING: lines from the feedback body.
       const feedback = block
         .split("\n")
-        .filter(l => !/^BAND:\s*\d/.test(l.trim()))
+        .filter(l => !/^BAND:\s*\d/.test(l.trim()) && !/^REASONING:/i.test(l.trim()))
         .join("\n")
         .trim();
       parsed[key] = {
-        band:     bandM ? parseInt(bandM[1]) : null,
-        feedback: feedback
+        band:      bandM ? parseInt(bandM[1]) : null,
+        reasoning: reasoning,
+        feedback:  feedback
       };
     }
 
