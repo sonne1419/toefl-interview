@@ -1543,7 +1543,16 @@ async function waitForSaveOrRerecord(responseTime) {
 
     if (action === "save") return;
 
-    // Re-record — start immediately, no extra press needed
+    // Re-record — KEEP the take that was just made instead of discarding it, so
+    // every attempt is preserved (matches drill mode, where each attempt is
+    // saved and uploaded separately). getRunLabel appends _run2, _run3, … so the
+    // filenames are unique and none overwrites another on the Drive upload.
+    if (STATE._lastBlob) {
+      // Make sure the take's grade has landed before saving, so band/gap/grammar
+      // are stored with this attempt (same as the Save path does).
+      if (STATE._gradePromise) { try { await STATE._gradePromise; } catch (e) {} }
+      saveRecording(STATE._lastBlob);
+    }
     hidePostRecordButtons();
     STATE._lastBlob = null;
 
@@ -1934,8 +1943,11 @@ function saveRecording(blob) {
   const setLabel  = task ? (task.set_label || task.set_id || "Set") : "Set";
   const qIndex    = STATE.currentQuestionIndex || 0;
   const fname     = getRunLabel(keyPrefix, stage, qId) + ".webm";
+  // Attempt number for THIS question at THIS stage (1-based), so repeated takes
+  // can be labelled "Attempt 2", "Attempt 3", … in the results/doc.
+  const attempt   = STATE.recordings.filter(r => r.stage === stage && r.question_id === qId).length + 1;
   STATE.recordings.push({
-    stage, question_id: qId, q: q.q, audio: q.audio, blob, filename: fname,
+    stage, question_id: qId, q: q.q, audio: q.audio, blob, filename: fname, attempt,
     set_label: setLabel, test_id: task?.set_id || "test", question_index: qIndex,
     set_id: task?.set_id || "", set_name: task?.set_name || "",
     opening_type: q.opening_type || "", question_type: q.question_type || "",
@@ -2787,6 +2799,7 @@ async function runTranscriptionFlow() {
     if (_testId) _headBits.push(escapeHTML(_testId));
     if (_testName) _headBits.push(escapeHTML(_testName));
     _headBits.push('Q' + r.question_index);
+    if (r.attempt > 1) _headBits.push('Attempt ' + r.attempt);
     if (_propLabel) _headBits.push(escapeHTML(_propLabel));
     _headBits.push(STAGE_META[r.stage] ? STAGE_META[r.stage].title : 'Stage ' + r.stage);
     card.innerHTML =
@@ -3084,6 +3097,7 @@ async function exportResultsDoc(opts) {
     if (r.set_id || r.test_id) headBits.push(escapeHTML(r.set_id || r.test_id));
     if (r.set_name) headBits.push(escapeHTML(r.set_name));
     headBits.push("Q" + (r.question_index || (i + 1)));
+    if (r.attempt > 1) headBits.push("Attempt " + r.attempt);
     if (propLabel) headBits.push(escapeHTML(propLabel));
     headBits.push(escapeHTML(stageTitle));
     const header = `<h2 style="color:#00736b;font-size:16px">${headBits.join(" — ")}</h2>`;
