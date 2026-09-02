@@ -1967,6 +1967,10 @@ function saveRecording(blob) {
   // Clear so the next question cannot inherit this take's result.
   STATE._lastTranscript = ""; STATE._lastBand = null; STATE._lastGap = "";
   STATE._lastGrammar = ""; STATE._gradePromise = null;
+
+  // Incrementally save this take to Drive (audio + report), decoupled from the
+  // End Session results screen. Fire-and-forget; End Session awaits stragglers.
+  saveAttemptToDrive(STATE.recordings[STATE.recordings.length - 1]);
 }
 
 
@@ -2733,10 +2737,10 @@ async function endStage4Session() {
   recs.forEach((r) => { list.appendChild(stage0ResultCard(r, 0)); });
   try { translateStaticEls("#results-list"); } catch (e) {}
 
-  const transcripts = {};
-  recs.forEach((r, i) => { transcripts[i] = r.transcript || ""; });
-  await autoDownload(transcripts);
-  await exportStage0Doc(recs);
+  // Drive saving is decoupled from this screen: each take already uploaded its
+  // audio + updated the report as it was made. Just wait for any in-flight save
+  // to finish (e.g. if the student ended immediately after the last take).
+  await _driveSaveChain;
   statusEl.textContent = "✓ Saved to your records.";
 }
 
@@ -3041,6 +3045,105 @@ function sessionBaseName() {
   }
 
   return [keyPrefix, "interview", stagePart, testPart, date].filter(Boolean).join("_");
+}
+
+// ═══════════════════════════════════════════════════
+// INCREMENTAL DRIVE SAVE (Stage 0 & Stage 4)
+// Each recording is saved to Drive the moment it is made, and the report doc is
+// rebuilt + re-saved after every recording — so Drive is always current and a
+// crash mid-session never loses takes. This is decoupled from the results
+// screen, which is a separate in-memory readout shown at End Session.
+// Saves are serialized so concurrent takes never race the report file id.
+// ═══════════════════════════════════════════════════
+let _driveSaveChain = Promise.resolve();
+let _drivePending = 0;
+
+// Build the report HTML directly from STATE.recordings (reading each record's
+// own band/transcript/grammar, which Stage 0 & 4 store at save time). Unlike
+// exportResultsDoc, this needs no per-session "parsed" map — the grades already
+// live on the records.
+function buildIncrementalReportHtml() {
+  const rowsHtml = STATE.recordings.map((r, i) => {
+    const origUrl = absoluteAudioUrl(r.audio);
+    const yourUrl = r.driveLink || "";
+    const origLink = origUrl
+      ? `<a href="${escapeHTML(origUrl)}">▶ Play original audio</a>`
+      : `<span style="color:#999">Original audio unavailable</span>`;
+    const yourLink = yourUrl
+      ? `<a href="${escapeHTML(yourUrl)}">▶ Play your recording</a>`
+      : `<span style="color:#999">Your recording unavailable</span>`;
+    const stageTitle = STAGE_META[r.stage] ? STAGE_META[r.stage].title : ("Stage " + r.stage);
+    const propLabel = questionHintLabel({ opening_type: r.opening_type, question_type: r.question_type });
+    const headBits = [];
+    if (r.set_id || r.test_id) headBits.push(escapeHTML(r.set_id || r.test_id));
+    if (r.set_name) headBits.push(escapeHTML(r.set_name));
+    headBits.push("Q" + (r.question_index || (i + 1)));
+    if (r.attempt > 1) headBits.push("Attempt " + r.attempt);
+    if (propLabel) headBits.push(escapeHTML(propLabel));
+    headBits.push(escapeHTML(stageTitle));
+    const header = `<h2 style="color:#00736b;font-size:16px">${headBits.join(" — ")}</h2>`;
+    const question = r.q ? `<p><strong>Question:</strong> ${escapeHTML(r.q)}</p>` : "";
+    const words = countWords(r.transcript || "");
+    const transcript =
+      `<p><strong>Transcript — ${words} words</strong><br>` +
+      `${escapeHTML(r.transcript || "(no speech detected)")}</p>`;
+    const links = `<p>${origLink} &nbsp;|&nbsp; ${yourLink}</p>`;
+    let feedback = "";
+    if (typeof r.band === "number") {
+      feedback += `<p><strong>Band ${escapeHTML(String(r.band))} &middot; ${words} words</strong></p>`;
+      if (r.feedback) feedback += `<p><strong>Feedback:</strong><br>${escapeHTML(r.feedback).replace(/\n/g, "<br>")}</p>`;
+    }
+    if (r.grammar) {
+      const ghtml = escWithLabels(highlightGrammarChanges(r.grammar)).replace(/\n/g, "<br>");
+      feedback += `<p><strong>Grammar:</strong><br>${ghtml}</p>`;
+    }
+    return header + question + transcript + links + feedback + "<hr>";
+  }).join("");
+
+  const bands = STATE.recordings.map(r => r.band).filter(b => typeof b === "number");
+  const avg = bands.length ? (bands.reduce((a, b) => a + b, 0) / bands.length).toFixed(1) : "N/A";
+  const summary = bands.length
+    ? `<p style="font-size:20px;font-weight:700;color:#00736b">Average Score: ${avg} / 5 (${bands.length} scored)</p>`
+    : "";
+  const _r0 = STATE.recordings[0];
+  const setLabel = _r0 ? [(_r0.set_id || _r0.test_id || ""), (_r0.set_name || "")].filter(Boolean).join(" — ") : "";
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="font-family:Arial,sans-serif">
+      <h1>Interview — Results</h1>
+      <p>${escapeHTML(setLabel)}</p>
+      <p>Generated ${escapeHTML(new Date().toLocaleString())}</p>
+      ${summary}${rowsHtml}
+    </body></html>`;
+}
+
+// Queue an incremental save for one recording: upload its audio (once), then
+// rebuild + re-save the whole report doc. Serialized so the report's file id is
+// always known before the next save reuses it (no duplicate report docs).
+function saveAttemptToDrive(rec) {
+  const keyPrefix = (sessionStorage.getItem("access_key") || "").slice(0, 3).toLowerCase();
+  if (!keyPrefix || !rec) return _driveSaveChain;
+  _drivePending++;
+  _driveSaveChain = _driveSaveChain.then(async () => {
+    try {
+      // 1. Upload this recording's audio once (skip if already uploaded).
+      if (rec.blob && !rec.driveLink) {
+        const b64 = await blobToBase64(rec.blob);
+        const up = await uploadToDrive(rec.filename, b64, "audio/webm", keyPrefix, true,
+          undefined, "04_speaking_interview/audio_interview");
+        if (up && up.link) rec.driveLink = up.link;
+      }
+      // 2. Rebuild + re-save the report doc (PATCH the same file each time).
+      const html = buildIncrementalReportHtml();
+      const docName = `${sessionBaseName()}_report`;
+      const up2 = await uploadToDrive(docName, html, "text/html", keyPrefix, false,
+        "application/vnd.google-apps.document", "04_speaking_interview",
+        STATE._sessionFileId || null);
+      if (up2 && up2.fileId) STATE._sessionFileId = up2.fileId;
+    } catch (e) {
+      console.warn("Incremental Drive save failed:", e.message);
+    }
+  }).then(() => { _drivePending = Math.max(0, _drivePending - 1); });
+  return _driveSaveChain;
 }
 
 // fileId updates an existing Drive file instead of creating another — used so a
@@ -3810,6 +3913,9 @@ async function stage0ProcessRecording() {
     entry.band     = result.band;
     entry.feedback = result.feedback || "";
 
+    // Incrementally save this take to Drive (audio + report) now the band is in.
+    saveAttemptToDrive(entry);
+
     block.innerHTML =
       (result.band !== null
         ? '<div class="analysis-band">Band ' + result.band + ' · ' + words + ' words</div>'
@@ -4432,13 +4538,9 @@ async function endStage0Session() {
   // they are in the DOM. Redo cards do the same when they are appended.
   try { translateStaticEls("#results-list"); } catch (e) {}
 
-  // Same download + Drive upload the other stages get, using the transcripts
-  // we already have. One upload pass at End Session, not per recording.
-  // autoDownload populates r.driveLink, so the report must wait for it.
-  const transcripts = {};
-  recs.forEach((r, i) => { transcripts[i] = r.transcript || ""; });
-  await autoDownload(transcripts);
-  await exportStage0Doc(recs);
+  // Drive saving is decoupled from this screen: each take already uploaded its
+  // audio + updated the report as it was made. Just wait for any in-flight save.
+  await _driveSaveChain;
   statusEl.textContent = "✓ Saved to your records.";
 }
 
