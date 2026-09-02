@@ -3768,9 +3768,13 @@ async function stage0ProcessRecording() {
     grammar: "",
     sample: stage0GoldenSample()
   };
-  const existing = STATE.recordings.findIndex(r => r.stage === 0 && r.question_id === sampleId);
-  if (existing >= 0) STATE.recordings[existing] = entry;
-  else               STATE.recordings.push(entry);
+  // Attempt number for this sample (1-based), so repeated takes can be labelled
+  // "Attempt 2", "Attempt 3", … in the results/doc.
+  entry.attempt = STATE.recordings.filter(r => r.stage === 0 && r.question_id === sampleId).length + 1;
+  // KEEP every take instead of replacing — each re-record is preserved and
+  // uploaded separately (matches stage 4 and the drill). Grading below updates
+  // THIS entry object by reference, so pushing a new one per take is safe.
+  STATE.recordings.push(entry);
 
   if (!STAGE0_TRANSCRIPT.trim()) return;   // nothing to score
 
@@ -4079,11 +4083,10 @@ function stage0ResultCard(r, attempt) {
 
   const headBits = ["Stage 0"];
   if (r.question_id) headBits.push(escapeHTML(r.question_id));
-  // How many takes this question has had. The earlier ones are replaced, not
-  // kept — a false start is not worth preserving — but the count still tells the
-  // student they have been round more than once.
-  if (r._attempts > 1) headBits.push("Attempt " + r._attempts);
-  else if (attempt)    headBits.push("Redo " + attempt);
+  // Every take is now kept and uploaded separately, so label repeats by attempt.
+  if (r.attempt > 1)       headBits.push("Attempt " + r.attempt);
+  else if (r._attempts > 1) headBits.push("Attempt " + r._attempts);
+  else if (attempt)        headBits.push("Redo " + attempt);
 
   const lines = (t) => (t || "")
     .split("\n").filter(l => l.trim())
